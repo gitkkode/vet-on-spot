@@ -1,0 +1,474 @@
+@use 'sass:color';
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.doctors-page {
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  &__grid {
+    margin-top: 0;
+  }
+
+  &__add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: center;
+
+    app-icon,
+    .app-icon {
+      display: block;
+      flex-shrink: 0;
+    }
+  }
+
+  .doctors-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 20px;
+  }
+
+  .doctor-card {
+    @include card;
+    padding: 22px;
+    cursor: pointer;
+    transition: all 0.3s $appt-ease;
+
+    &:hover {
+      background: $appt-glass-card-hover;
+      transform: translateY(-2px);
+      box-shadow: $appt-shadow-glass-lg;
+    }
+
+    &--selected {
+      border-color: $appt-primary-500;
+      background: $appt-glass-card-hover;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.12);
+    }
+
+    &__header {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    &__avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: $blue-primary;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.25);
+      flex-shrink: 0;
+    }
+
+    &__name {
+      font-size: 16px;
+      font-weight: 600;
+      color: $text-primary;
+      margin: 0 0 4px;
+    }
+
+    &__specialty {
+      font-size: 13px;
+      color: $text-secondary;
+      margin: 0;
+    }
+
+    &__status-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    &__location {
+      font-size: 13px;
+      color: $text-secondary;
+      margin-bottom: 16px;
+    }
+
+    &__stats {
+      display: flex;
+      gap: 16px;
+      padding-top: 16px;
+      border-top: 1px solid $border;
+      font-size: 13px;
+      color: $text-secondary;
+
+      strong {
+        color: $text-primary;
+      }
+    }
+
+    &__actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+
+    &--available {
+      background: $success;
+    }
+
+    &--on-visit {
+      background: $warning;
+    }
+
+    &--offline {
+      background: $text-muted;
+    }
+  }
+
+  .doctor-detail {
+    @include card;
+    padding: 22px;
+    border-radius: $radius-card;
+    position: sticky;
+    top: 24px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    box-shadow: $shadow-glass;
+
+    &--placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 320px;
+      color: $text-secondary;
+      text-align: center;
+
+      span {
+        font-size: 48px;
+        margin-bottom: 12px;
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+      }
+    }
+
+    &__header {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid $border;
+
+      h2 {
+        margin: 0 0 4px;
+        font-size: 18px;
+        color: $text-primary;
+      }
+
+      p {
+        margin: 0 0 4px;
+        font-size: 13px;
+        color: $text-secondary;
+      }
+    }
+
+    &__avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: $brand-primary;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      flex-shrink: 0;
+      box-shadow: $shadow-soft;
+    }
+
+    &__location {
+      font-size: 12px;
+      color: $text-muted;
+    }
+
+    &__section {
+      margin-bottom: 20px;
+
+      h3 {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 12px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: $text-secondary;
+      }
+    }
+
+    &__count {
+      background: $bg-page;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    &__item {
+      @include card;
+      padding: 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+
+      strong {
+        display: block;
+        color: $text-primary;
+        margin-bottom: 4px;
+      }
+
+      span {
+        display: block;
+        color: $text-secondary;
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
+
+      &--active {
+        border-left: 3px solid $green-accent;
+      }
+
+      &--pending {
+        border-left: 3px solid $purple-primary;
+      }
+    }
+
+    &__meta {
+      font-size: 11px !important;
+    }
+
+    &__history {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+
+      li {
+        padding: 10px 0;
+        border-bottom: 1px solid $border;
+        font-size: 13px;
+
+        strong {
+          display: block;
+          color: $text-primary;
+        }
+
+        span {
+          display: block;
+          color: $text-secondary;
+          font-size: 12px;
+          margin: 4px 0;
+        }
+      }
+    }
+
+    &__assign-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px;
+      background: $bg-page;
+      border-radius: $radius-btn;
+      margin-bottom: 8px;
+
+      strong {
+        display: block;
+        font-size: 13px;
+      }
+
+      span {
+        font-size: 12px;
+        color: $text-secondary;
+      }
+    }
+
+    &__empty {
+      margin: 0;
+      font-size: 13px;
+      color: $text-muted;
+      font-style: italic;
+    }
+
+    &__note {
+      margin: 0;
+      padding: 12px;
+      background: $warning-light;
+      border-radius: $radius-btn;
+      font-size: 13px;
+      color: color.adjust($warning, $lightness: -15%);
+    }
+  }
+
+  @media (max-width: 1100px) {
+    .doctors-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .doctor-detail {
+      position: static;
+      max-height: none;
+    }
+  }
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 43, 60, 0.45);
+  z-index: 200;
+}
+
+.doctor-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, calc(100vw - 32px));
+  @include glass-surface;
+  border-radius: $appt-radius-lg;
+  box-shadow: $appt-shadow-glass-lg;
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  z-index: 201;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 20px 24px;
+    border-bottom: 1px solid $appt-glass-border-white-50;
+    background: rgba(248, 250, 252, 0.55);
+
+    h2 {
+      margin: 0 0 4px;
+      font-family: $font-family-heading;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: $text-primary;
+    }
+
+    p {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: $text-secondary;
+    }
+  }
+
+  &__close {
+    width: 36px;
+    height: 36px;
+    border: 1px solid $border;
+    border-radius: 50%;
+    background: $appt-glass-input;
+    cursor: pointer;
+    font-size: 16px;
+    color: $text-secondary;
+    flex-shrink: 0;
+    transition: all 0.2s $appt-ease;
+
+    &:hover {
+      background: $appt-glass-card-hover;
+      color: $text-primary;
+    }
+  }
+
+  &__body {
+    padding: 20px 24px;
+  }
+
+  &__error {
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: $danger-light;
+    color: $danger;
+    font-size: 13px;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px;
+    border-top: 1px solid $appt-glass-border-white-50;
+    background: rgba(248, 250, 252, 0.5);
+  }
+}
+
+.doctor-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    span {
+      font-size: 12px;
+      font-weight: 500;
+      color: $text-secondary;
+    }
+
+    input,
+    select {
+      border: 1px solid $border;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: $text-primary;
+      background: $appt-glass-input;
+      outline: none;
+      transition: all 0.2s $appt-ease;
+
+      &:focus {
+        border-color: $appt-primary-500;
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+      }
+    }
+  }
+}

@@ -1,0 +1,74 @@
+@use 'variables' as *;
+
+app-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.app-icon {
+  display: block;
+  flex-shrink: 0;
+  color: currentColor;
+  vertical-align: middle;
+
+  &--sm {
+    width: 16px;
+    height: 16px;
+  }
+
+  &--md {
+    width: 20px;
+    height: 20px;
+  }
+
+  &--lg {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.icon-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+}
+
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--icon-badge-bg, #{$appt-primary-50});
+  color: var(--icon-badge-color, #{$appt-primary-600});
+  border: 1px solid rgba(255, 255, 255, 0.7);
+
+  &--teal {
+    background: $appt-primary-50;
+    color: $appt-primary-600;
+  }
+
+  &--danger {
+    background: $danger-light;
+    color: $danger;
+  }
+}
+
+.pet-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: $appt-glass-input;
+  color: $appt-primary-600;
+  border: 1px solid $appt-glass-border-white-50;
+  box-shadow: $appt-shadow-glass-sm;
+}

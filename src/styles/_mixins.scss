@@ -1,0 +1,157 @@
+@use 'variables' as *;
+
+@mixin card {
+  background: $appt-glass-panel;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: $radius-card;
+  border: 1px solid $appt-glass-border;
+  box-shadow: $appt-shadow-glass;
+}
+
+@mixin stat-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: $text-muted;
+}
+
+@mixin badge($bg, $color) {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: $radius-pill;
+  font-size: 12px;
+  font-weight: 600;
+  background: $bg;
+  color: $color;
+}
+
+@mixin btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 22px;
+  background: linear-gradient(135deg, $appt-primary-600 0%, $appt-indigo-600 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: $font-family-body;
+  cursor: pointer;
+  box-shadow: $appt-shadow-glow-primary;
+  transition: all 0.3s $appt-ease;
+
+  &:hover:not(:disabled) {
+    box-shadow: $appt-shadow-glow-primary-hover;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(1px) scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+@mixin filter-chip {
+  padding: 9px 18px;
+  border-radius: 12px;
+  border: 1px solid $border;
+  background: rgba(255, 255, 255, 0.55);
+  color: $text-secondary;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s $appt-ease;
+
+  &.active,
+  &--active {
+    background: #fff;
+    border-color: $appt-primary-100;
+    color: $appt-primary-600;
+    box-shadow: $appt-shadow-glass-sm;
+  }
+}
+
+@mixin glass-surface {
+  background: $appt-glass-panel;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid $appt-glass-border;
+  box-shadow: $appt-shadow-glass;
+}
+
+@mixin appt-glass-panel {
+  @include glass-surface;
+}
+
+@mixin appt-glass-card {
+  background: $appt-glass-card;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid $appt-glass-border-soft;
+  box-shadow: $appt-shadow-glass-sm;
+  transition: all 0.3s $appt-ease;
+
+  &:hover {
+    background: $appt-glass-card-hover;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px 0 rgba(31, 38, 135, 0.06);
+  }
+}
+
+@mixin appt-glass-input {
+  background: $appt-glass-input;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.2s ease;
+
+  &:focus {
+    background: #ffffff;
+    border-color: $appt-primary-500;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    outline: none;
+  }
+}
+
+@mixin appt-btn-gradient {
+  @include btn-primary;
+}
+
+@mixin appt-btn-glass {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: $appt-glass-input;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  color: $text-secondary;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: $appt-font;
+
+  &:hover {
+    background: #ffffff;
+    color: $text-primary;
+  }
+}
+
+@mixin ambient-orbs {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}

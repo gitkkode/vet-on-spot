@@ -1,0 +1,213 @@
+@use '../variables' as *;
+
+.vos-picker {
+  position: relative;
+  width: 100%;
+
+  &__trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 42px;
+    padding: 9px 14px;
+    border: 1.5px solid #c7d2fe;
+    border-radius: 14px;
+    background: #fff;
+    color: $text-primary;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, background 0.2s;
+
+    &:hover:not(:disabled) {
+      border-color: #a5b4fc;
+      background: #fafbff;
+    }
+
+    &:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    &--placeholder {
+      color: $text-muted;
+    }
+  }
+
+  &__chevron {
+    flex-shrink: 0;
+    color: $text-secondary;
+    transition: transform 0.2s;
+    transform: rotate(90deg);
+
+    &--open {
+      transform: rotate(-90deg);
+    }
+  }
+
+  &__panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 120;
+    min-width: 100%;
+    width: max(100%, 240px);
+    border-radius: 18px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 14px 40px rgba(30, 41, 59, 0.14) !important;
+  }
+
+  &__panel-head {
+    padding: 14px 18px;
+    background: linear-gradient(90deg, #4f7cff 0%, #6b4fd8 100%);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+
+  &__option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: $text-primary;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: #f8fafc;
+    }
+
+    &--selected {
+      background: #d9f7f0;
+      color: #0f766e;
+      font-weight: 600;
+
+      .app-icon {
+        color: #0f766e;
+      }
+    }
+  }
+
+  &--calendar &__panel {
+    width: 300px;
+  }
+
+  &__calendar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 14px 12px;
+    background: linear-gradient(90deg, #4f7cff 0%, #6b4fd8 100%);
+    color: #fff;
+  }
+
+  &__calendar-title {
+    flex: 1;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  &__nav-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.28);
+    }
+  }
+
+  &__weekdays,
+  &__days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    padding: 12px;
+  }
+
+  &__weekdays {
+    padding-bottom: 4px;
+
+    span {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: $text-muted;
+    }
+  }
+
+  &__day {
+    aspect-ratio: 1;
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: $text-primary;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover:not(:disabled) {
+      background: #f1f5f9;
+    }
+
+    &--outside {
+      color: #cbd5e1;
+    }
+
+    &--past {
+      color: #cbd5e1;
+    }
+
+    &--selected {
+      background: #cffafe;
+      color: #0e7490;
+      font-weight: 700;
+    }
+
+    &:disabled {
+      cursor: default;
+    }
+  }
+}
+
+.form-field,
+.bookings-filters__field,
+.doctor-profile-sidebar__availability {
+  .vos-picker {
+    width: 100%;
+  }
+}

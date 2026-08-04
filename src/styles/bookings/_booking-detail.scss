@@ -1,0 +1,358 @@
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.booking-detail-page {
+  &__top {
+    margin-bottom: 16px;
+  }
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    color: $purple-dark;
+    text-decoration: none;
+    padding: 8px 14px;
+    border-radius: $radius-pill;
+    background: $purple-light;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+
+    app-icon,
+    .app-icon {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      background: rgba($purple-primary, 0.15);
+    }
+  }
+
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+
+  &__hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  &__avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: $brand-primary;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: $shadow-soft;
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  &__visit-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 5px 12px;
+    border-radius: $radius-pill;
+    background: $info-light;
+    color: $blue-accent;
+
+    &--new {
+      background: $purple-light;
+      color: $purple-dark;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  &__section {
+    margin-bottom: 20px;
+
+    .card__header {
+      margin-bottom: 16px;
+
+      h3 {
+        margin: 0;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: $text-secondary;
+      }
+    }
+  }
+
+  &__count,
+  &__hint {
+    font-size: 12px;
+    color: $text-muted;
+    font-weight: 500;
+  }
+
+  &__summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  &__field {
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: $text-secondary;
+      margin-bottom: 4px;
+    }
+
+    span {
+      font-size: 14px;
+      color: $text-primary;
+      font-weight: 500;
+    }
+
+    &--full {
+      grid-column: 1 / -1;
+    }
+  }
+
+  &__visits {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__visit-row {
+    display: grid;
+    grid-template-columns: 100px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 14px 16px;
+    border: 1px solid $border;
+    border-radius: 14px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: rgba($purple-primary, 0.35);
+      background: $purple-light;
+      box-shadow: $shadow-soft;
+    }
+  }
+
+  &__visit-date {
+    strong {
+      display: block;
+      font-size: 14px;
+      color: $text-primary;
+    }
+
+    span {
+      font-size: 12px;
+      color: $text-secondary;
+    }
+  }
+
+  &__visit-info {
+    min-width: 0;
+
+    strong {
+      display: block;
+      font-size: 14px;
+      color: $text-primary;
+      margin-bottom: 4px;
+    }
+
+    span {
+      font-size: 12px;
+      color: $text-secondary;
+    }
+  }
+
+  &__visit-link {
+    font-size: 13px;
+    font-weight: 600;
+    color: $purple-dark;
+  }
+
+  &__meds {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__med-row {
+    display: grid;
+    grid-template-columns: 96px 1fr auto;
+    gap: 12px;
+    padding: 12px 14px;
+    background: $bg-page;
+    border-radius: 12px;
+    border-left: 3px solid $purple-primary;
+  }
+
+  &__med-date {
+    font-size: 12px;
+    font-weight: 600;
+    color: $text-secondary;
+  }
+
+  &__med-info {
+    min-width: 0;
+
+    strong {
+      display: block;
+      font-size: 14px;
+      color: $text-primary;
+      margin-bottom: 2px;
+    }
+
+    span {
+      display: block;
+      font-size: 12px;
+      color: $text-secondary;
+      line-height: 1.4;
+    }
+  }
+
+  &__med-doctor {
+    color: $purple-dark !important;
+    font-weight: 600;
+  }
+
+  &__med-notes {
+    font-style: italic;
+  }
+
+  &__med-ref {
+    font-size: 11px;
+    color: $text-muted;
+    white-space: nowrap;
+  }
+
+  &__empty {
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: $text-secondary;
+    background: $bg-page;
+    border-radius: 12px;
+  }
+
+  &__timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__timeline-item {
+    a {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 12px 14px;
+      border: 1px solid $border;
+      border-radius: 12px;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.2s;
+
+      strong {
+        font-size: 13px;
+        color: $text-primary;
+      }
+
+      span:not(.status-pill) {
+        font-size: 12px;
+        color: $text-secondary;
+      }
+
+      &:hover {
+        border-color: rgba($purple-primary, 0.35);
+        background: $purple-light;
+      }
+    }
+
+    &--current a {
+      border-color: $purple-primary;
+      background: $purple-light;
+      box-shadow: $shadow-soft;
+    }
+  }
+
+  &__not-found {
+    text-align: center;
+    padding: 48px 32px;
+
+    h2 {
+      margin: 0 0 8px;
+    }
+
+    p {
+      margin: 0 0 20px;
+      color: $text-secondary;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      text-decoration: none;
+    }
+  }
+
+  @media (max-width: 1000px) {
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__summary-grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__visit-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    &__med-row {
+      grid-template-columns: 1fr;
+    }
+  }
+}

@@ -1,0 +1,38 @@
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.transport-page {
+  .transport-stats {
+    margin-bottom: 24px;
+
+    .stat-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: $shadow-soft;
+      }
+    }
+  }
+
+  .vehicle-table {
+    .card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    table {
+      margin: 0;
+    }
+
+    th:first-child,
+    td:first-child {
+      padding-left: 24px;
+    }
+
+    th:last-child,
+    td:last-child {
+      padding-right: 24px;
+    }
+  }
+}

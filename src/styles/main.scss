@@ -1,0 +1,84 @@
+@use 'variables';
+@use 'mixins';
+@use 'icons';
+@use 'layout';
+@use 'components';
+@use 'dashboard/dashboard';
+@use 'bookings/bookings';
+@use 'bookings/booking-detail';
+@use 'calendar/calendar';
+@use 'doctors/doctors';
+@use 'doctors/doctor-profile';
+@use 'dispatch/dispatch';
+@use 'appointment/appointment-modal';
+@use 'appointment/add-appointment';
+@use 'appointment/quick-add-appointment';
+@use 'appointment/express-add-appointment';
+@use 'transport/transport';
+@use 'live-map/live-map';
+@use 'settings/settings';
+@use 'login/login';
+@use 'logout/logout';
+@use 'components/bangalore-map';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: variables.$font-family-body;
+  font-size: 14px;
+  color: variables.$text-primary;
+  background: variables.$bg-page;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: variables.$font-family-heading;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.6);
+}
+
+[class*='chart'] svg,
+.donut-chart svg {
+  filter: none !important;
+}

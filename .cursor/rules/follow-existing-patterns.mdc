@@ -1,0 +1,10 @@
+---
+description: Follow existing codebase patterns and conventions
+alwaysApply: true
+---
+
+# Follow Existing Patterns
+
+Analyze the existing architecture, coding style, naming conventions, and patterns used in the codebase. Follow those patterns consistently.
+
+Do not introduce new libraries, abstractions, or architectural changes unless explicitly requested.

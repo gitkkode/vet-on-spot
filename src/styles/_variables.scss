@@ -1,0 +1,97 @@
+// VetOnSpot — Nexus Clinical Portal design system
+// Colors, type, radius, and shadows match ref.html (glassmorphism).
+
+$appt-font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+$appt-primary-50: #eff6ff;
+$appt-primary-100: #dbeafe;
+$appt-primary-400: #60a5fa;
+$appt-primary-500: #3b82f6;
+$appt-primary-600: #2563eb;
+$appt-primary-700: #1d4ed8;
+$appt-indigo-600: #4338ca;
+
+$appt-page-bg: #f8fafc;
+$appt-glass-panel: rgba(255, 255, 255, 0.75);
+$appt-glass-card: rgba(255, 255, 255, 0.6);
+$appt-glass-card-hover: rgba(255, 255, 255, 0.85);
+$appt-glass-input: rgba(255, 255, 255, 0.5);
+$appt-glass-border: rgba(255, 255, 255, 0.8);
+$appt-glass-border-soft: rgba(255, 255, 255, 0.6);
+$appt-glass-border-white-50: rgba(255, 255, 255, 0.5);
+
+$appt-shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+$appt-shadow-glass-sm: 0 4px 16px 0 rgba(31, 38, 135, 0.03);
+$appt-shadow-glass-lg: 0 12px 48px 0 rgba(31, 38, 135, 0.08);
+$appt-shadow-glow-primary: 0 0 20px rgba(37, 99, 235, 0.3);
+$appt-shadow-glow-primary-hover: 0 6px 20px rgba(37, 99, 235, 0.4);
+$appt-shadow-glow-success: 0 0 20px rgba(16, 185, 129, 0.2);
+$appt-shadow-glow-warning: 0 0 20px rgba(245, 158, 11, 0.2);
+
+$appt-radius-panel: 2rem;
+$appt-radius-card: 1rem;
+$appt-radius-lg: 1.25rem;
+$appt-radius-pill: 999px;
+$appt-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+// ── Global aliases (used across dashboard, doctors, bookings, etc.) ───────
+$blue-primary: $appt-primary-600;
+$blue-dark: $appt-primary-700;
+$blue-light: $appt-primary-50;
+$blue-accent: $appt-primary-500;
+$cyan-accent: #38bdf8;
+
+$green-primary: #16a34a;
+$green-dark: #15803d;
+$green-light: #ecfdf3;
+$green-accent: #10b981;
+
+$purple-primary: $blue-primary;
+$purple-dark: $blue-dark;
+$purple-light: $blue-light;
+$pink-accent: $green-accent;
+
+$teal-primary: $blue-primary;
+$teal-light: $blue-light;
+$teal-dark: $blue-dark;
+
+$brand-primary: $appt-primary-600;
+$brand-primary-hover: $appt-primary-700;
+
+$bg-page: $appt-page-bg;
+$bg-card: $appt-glass-panel;
+$bg-glass: $appt-glass-card;
+$text-primary: #0f172a;
+$text-secondary: #64748b;
+$text-muted: #94a3b8;
+$border: rgba(226, 232, 240, 0.85);
+
+$success: $green-accent;
+$success-light: $green-light;
+$warning: #f59e0b;
+$warning-light: #fffbeb;
+$danger: #ef4444;
+$danger-light: #fef2f2;
+$info: $blue-accent;
+$info-light: $blue-light;
+$chart-blue: $blue-accent;
+$chart-blue-light: $blue-light;
+$chart-purple: $appt-indigo-600;
+$chart-purple-light: $blue-light;
+$chart-lavender: $blue-light;
+$chart-pink: $green-accent;
+$orange-accent: #f59e0b;
+
+$sidebar-width: 248px;
+$radius-card: $appt-radius-card;
+$radius-btn: 12px;
+$radius-pill: $appt-radius-pill;
+
+$shadow-card: $appt-shadow-glass-sm;
+$shadow-soft: $appt-shadow-glass;
+$shadow-glass: $appt-shadow-glass-lg;
+
+$font-family-body: $appt-font;
+$font-family-heading: $appt-font;
+$font-family: $font-family-body;
+$shell-gap: 16px;

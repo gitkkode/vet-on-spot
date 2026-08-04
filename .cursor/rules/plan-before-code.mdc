@@ -1,0 +1,14 @@
+---
+description: Require an implementation plan and approval before writing code
+alwaysApply: true
+---
+
+# Plan Before Code
+
+Before writing any code:
+
+1. Inspect the relevant files in the project
+2. Explain the implementation plan
+3. Identify which files need to be modified and what changes will be made
+4. Call out any potential risks
+5. Do not edit anything until the plan is approved

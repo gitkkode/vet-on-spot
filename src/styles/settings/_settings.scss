@@ -1,0 +1,100 @@
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.settings-page {
+  .settings-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+  }
+
+  .settings-nav {
+    @include card;
+    padding: 12px;
+
+    button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 12px 14px;
+      border: none;
+      background: transparent;
+      border-radius: $radius-btn;
+      font-size: 14px;
+      color: $text-secondary;
+      cursor: pointer;
+
+      &:hover {
+        background: $bg-page;
+      }
+
+      &.active {
+        background: $brand-primary;
+        color: #fff;
+        font-weight: 600;
+        box-shadow: $shadow-soft;
+      }
+    }
+  }
+
+  .settings-section {
+    @include card;
+
+    h3 {
+      margin: 0 0 20px;
+      font-size: 18px;
+      color: $text-primary;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: $text-secondary;
+        margin-bottom: 6px;
+      }
+
+      input,
+      select {
+        width: 100%;
+        max-width: 400px;
+        padding: 10px 14px;
+        border: 1px solid $border;
+        border-radius: $radius-pill;
+        font-size: 14px;
+        color: $text-primary;
+        background: $bg-page;
+
+        &:focus {
+          outline: none;
+          border-color: $purple-primary;
+          box-shadow: 0 0 0 3px rgba($purple-primary, 0.12);
+          background: $bg-card;
+        }
+      }
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid $border;
+      max-width: 480px;
+
+      span {
+        font-size: 14px;
+        color: $text-primary;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .settings-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+}

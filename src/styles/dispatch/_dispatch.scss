@@ -1,0 +1,347 @@
+@use 'sass:color';
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.dispatch-page {
+  .dispatch-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 300px;
+    gap: 20px;
+    min-height: 560px;
+    align-items: start;
+  }
+
+  .dispatch-queue {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  .dispatch-map-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 520px;
+
+    app-bangalore-map {
+      flex: 1;
+      min-height: 480px;
+    }
+  }
+
+  .dispatch-map-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+
+    &__item {
+      @include card;
+      padding: 12px 14px;
+
+      label {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: $text-muted;
+        margin-bottom: 4px;
+      }
+
+      strong {
+        font-size: 13px;
+        color: $text-primary;
+        line-height: 1.3;
+      }
+    }
+  }
+
+  .dispatch-panel {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+
+    &__customer {
+      margin: 0 0 4px;
+    }
+
+    &__location {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: $text-secondary;
+    }
+
+    &__area {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: $text-secondary;
+
+      strong {
+        color: $purple-dark;
+      }
+    }
+
+    &__reason {
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+  }
+
+  .queue-card {
+    @include card;
+    padding: 16px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    border: 2px solid transparent;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &__reason {
+      font-size: 13px;
+      color: $text-secondary;
+      margin-top: 4px;
+    }
+
+    &__location {
+      font-size: 12px;
+      color: $text-muted;
+      margin-top: 8px;
+      gap: 6px;
+    }
+
+    &:hover,
+    &--selected {
+      border-color: $purple-primary;
+      background: $purple-light;
+      box-shadow: $shadow-soft;
+    }
+
+    &__time {
+      font-size: 12px;
+      color: $warning;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    &__emergency {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: $danger;
+      background: $danger-light;
+      padding: 4px 8px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+
+    &--emergency {
+      border-color: rgba($danger, 0.4);
+
+      &:hover,
+      &.queue-card--selected {
+        border-color: $danger;
+        background: $danger-light;
+      }
+    }
+  }
+
+  .doctor-select {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid $border;
+    border-radius: 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background: $purple-light;
+      border-color: rgba($purple-primary, 0.35);
+    }
+
+    &__info {
+      flex: 1;
+      min-width: 0;
+
+      strong {
+        display: block;
+        font-size: 14px;
+        color: $text-primary;
+      }
+
+      span {
+        display: block;
+        font-size: 12px;
+        color: $text-secondary;
+        margin-top: 2px;
+      }
+    }
+
+    &__status {
+      font-weight: 600;
+      color: $purple-dark !important;
+    }
+
+    input {
+      accent-color: $purple-primary;
+      margin-top: 4px;
+    }
+
+    &--busy {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+  }
+
+  .dispatch-vehicle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: $bg-page;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    font-size: 13px;
+
+    div {
+      flex: 1;
+      min-width: 0;
+
+      strong {
+        display: block;
+      }
+
+      span {
+        font-size: 12px;
+        color: $text-secondary;
+      }
+    }
+
+    &__dist {
+      font-size: 12px;
+      font-weight: 700;
+      color: $green-accent;
+      white-space: nowrap;
+    }
+  }
+
+  .dispatch-banner {
+    padding: 12px 16px;
+    border-radius: $radius-btn;
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 500;
+
+    &--pending {
+      background: $warning-light;
+      color: color.adjust($warning, $lightness: -15%);
+    }
+
+    &--sent {
+      background: $info-light;
+      color: $info;
+    }
+
+    &--accepted {
+      background: $success-light;
+      color: $success;
+    }
+  }
+
+  .dispatch-emergency-sla {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: $radius-btn;
+    background: $danger-light;
+    color: $danger;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .dispatch-section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    color: $text-secondary;
+    margin: 16px 0 10px;
+    letter-spacing: 0.04em;
+  }
+
+  .dispatch-action-btn {
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  .dispatch-accept-panel {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid $border;
+
+    &__hint {
+      margin: 0 0 12px;
+      font-size: 12px;
+      color: $text-secondary;
+    }
+  }
+
+  .dispatch-accept-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border: 1.5px solid $success;
+    border-radius: $radius-btn;
+    background: $success-light;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      background: $success;
+      color: #fff;
+
+      small {
+        color: rgba(#fff, 0.85);
+      }
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    strong {
+      display: block;
+      font-size: 14px;
+      color: $text-primary;
+    }
+
+    small {
+      font-size: 12px;
+      color: $text-secondary;
+    }
+  }
+
+  .dispatch-accepted-info {
+    padding: 12px;
+    background: $success-light;
+    border-radius: $radius-btn;
+    margin-bottom: 16px;
+
+    p {
+      margin: 8px 0 0;
+      font-size: 14px;
+    }
+  }
+
+  @media (max-width: 1200px) {
+    .dispatch-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .dispatch-map-stats {
+      grid-template-columns: 1fr;
+    }
+  }
+}

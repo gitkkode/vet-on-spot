@@ -1,0 +1,78 @@
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.logout-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $appt-page-bg;
+  padding: 24px;
+  isolation: isolate;
+  overflow: hidden;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &::before {
+    width: 380px;
+    height: 380px;
+    top: -10%;
+    left: -8%;
+    background: #93c5fd;
+  }
+
+  &::after {
+    width: 360px;
+    height: 360px;
+    bottom: -12%;
+    right: -6%;
+    background: #a5b4fc;
+  }
+
+  &__card {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    padding: 48px 40px;
+    border-radius: $appt-radius-panel;
+    @include glass-surface;
+    box-shadow: $appt-shadow-glass-lg;
+
+    &-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: $text-primary;
+      margin: 0 0 8px;
+    }
+
+    p {
+      color: $text-secondary;
+      font-size: 14px;
+      font-weight: 500;
+      margin: 0 0 24px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      text-decoration: none;
+    }
+  }
+}

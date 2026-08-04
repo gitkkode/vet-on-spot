@@ -1,0 +1,493 @@
+<div class="intake" [class.intake--emergency]="isEmergency()">
+  <a class="intake-skip" href="#intake-main">Skip to form</a>
+
+  <div class="intake-ambient" aria-hidden="true">
+    <span class="intake-orb intake-orb--blue"></span>
+    <span class="intake-orb intake-orb--indigo"></span>
+    <span class="intake-orb intake-orb--cyan"></span>
+  </div>
+
+  @if (!submitted()) {
+    <div class="intake-shell">
+      <div class="intake-progress-bar" aria-hidden="true">
+        <div class="intake-progress-bar__fill" [style.width.%]="progressPct()"></div>
+      </div>
+
+      <header class="intake-form-header">
+        <div class="intake-form-header__left">
+          <button type="button" class="intake-icon-btn" (click)="goBackNav()" aria-label="Back">
+            <app-icon name="arrow-left" size="sm" />
+          </button>
+          <div class="intake-form-header__titles">
+            <div class="intake-form-header__title-row">
+              <h1>{{ appointmentService.isEditing() ? 'Edit Appointment' : 'New Appointment' }}</h1>
+              <span class="intake-badge">Visit</span>
+            </div>
+            <p class="intake-form-header__status">
+              <span class="intake-form-header__status-dot"></span>
+              {{ stepMeta() }} · {{ progressPct() }}% complete
+            </p>
+          </div>
+        </div>
+        <div class="intake-form-header__actions">
+          @if (isEmergency()) {
+            <a class="intake-call-chip" [href]="'tel:' + clinicPhone">Call emergency</a>
+          }
+          <button type="button" class="intake-btn intake-btn--ghost" (click)="close()">
+            <app-icon name="close" size="sm" /> Save &amp; Exit
+          </button>
+        </div>
+      </header>
+
+      <div class="intake-body">
+        <nav class="intake-stepper" aria-label="Form steps">
+          @for (s of steps; track s.n) {
+            <button
+              type="button"
+              class="intake-stepper__item"
+              [class.intake-stepper__item--active]="currentStep() === s.n"
+              [class.intake-stepper__item--done]="currentStep() > s.n"
+              (click)="goToStep(s.n)"
+            >
+              <span class="intake-stepper__num">{{ s.n }}</span>
+              <span class="intake-stepper__meta">
+                <span class="intake-stepper__label">{{ s.title }}</span>
+              </span>
+            </button>
+          }
+        </nav>
+
+        <main class="intake-stage" id="intake-main">
+          <div class="intake-form">
+            <div class="intake-card">
+              <!-- STEP 1 -->
+              @if (currentStep() === 1) {
+                <section class="intake-step">
+                  <div class="intake-step__eyebrow">Step 1 of {{ totalSteps }}</div>
+                  <h2 class="intake-step__title">Before we begin</h2>
+                  <p class="intake-step__sub">One quick question so we can get your pet seen at the right speed.</p>
+
+                  <div class="intake-choice">
+                    <div class="intake-choice__label">
+                      Is this an emergency?
+                      <span class="intake-tag intake-tag--req">Required</span>
+                    </div>
+                    <div class="intake-yn">
+                      <button type="button" class="intake-yn__btn" [class.intake-yn__btn--on]="!isEmergency()" (click)="setEmergency(false)">
+                        <span class="intake-yn__radio" aria-hidden="true"></span>
+                        <span class="intake-yn__copy">
+                          <strong>No, routine visit</strong>
+                          <small>Standard appointment booking</small>
+                        </span>
+                      </button>
+                      <button type="button" class="intake-yn__btn intake-yn__btn--urgent" [class.intake-yn__btn--on]="isEmergency()" (click)="setEmergency(true)">
+                        <span class="intake-yn__radio" aria-hidden="true"></span>
+                        <span class="intake-yn__copy">
+                          <strong>Yes, it's urgent</strong>
+                          <small>Needs faster clinic attention</small>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+
+                  @if (isEmergency()) {
+                    <div class="intake-emg">
+                      <div class="intake-emg__title">
+                        <app-icon name="alert" size="sm" /> We recommend calling the clinic directly
+                      </div>
+                      <p>For the fastest possible care, please call us right away. You can still fill out these details while you wait.</p>
+                      <a class="intake-btn intake-btn--danger" [href]="'tel:' + clinicPhone">
+                        <app-icon name="bell" size="sm" /> Call emergency line
+                      </a>
+                      <fieldset>
+                        <legend class="intake-glabel">Tell us what's happening</legend>
+                        <div class="intake-chips">
+                          @for (q of emergencyQuestions; track q.key) {
+                            @if (q.key !== 'isEmergency') {
+                              <button
+                                type="button"
+                                class="intake-chip"
+                                [class.intake-chip--on]="f.emergency[q.key]"
+                                (click)="toggleEmergency(q.key)"
+                              >
+                                {{ q.label.replace('?', '') }}
+                              </button>
+                            }
+                          }
+                        </div>
+                      </fieldset>
+                    </div>
+                  }
+                </section>
+              }
+
+              <!-- STEP 2 -->
+              @if (currentStep() === 2) {
+                <section class="intake-step">
+                  <div class="intake-step__eyebrow">Step 2 of {{ totalSteps }}</div>
+                  <h1 class="intake-step__title">Who's bringing your pet in? <span class="intake-tag intake-tag--req">Required</span></h1>
+                  <p class="intake-step__sub">Your contact details, in case the clinic needs to reach you.</p>
+                  <div class="intake-grid">
+                    <label class="intake-field"><span>Full name</span><input type="text" [ngModel]="f.owner.fullName" (ngModelChange)="patchOwner('fullName', $event)" placeholder="e.g. Ananya Rao" /></label>
+                    <label class="intake-field"><span>Mobile number</span><input type="tel" [ngModel]="f.owner.mobile" (ngModelChange)="patchOwner('mobile', $event)" placeholder="10-digit mobile number" /></label>
+                    <label class="intake-field"><span>Email <em class="intake-tag intake-tag--opt">Optional</em></span><input type="email" [ngModel]="f.owner.email" (ngModelChange)="patchOwner('email', $event)" placeholder="you@example.com" /></label>
+                    <label class="intake-field"><span>Address</span><input type="text" [ngModel]="f.owner.address" (ngModelChange)="patchOwner('address', $event)" placeholder="House no, street, area, city" /></label>
+                    <label class="intake-field intake-field--full"><span>Emergency contact</span><input type="text" [ngModel]="f.owner.emergencyContact" (ngModelChange)="patchOwner('emergencyContact', $event)" placeholder="Name and number" /></label>
+                  </div>
+                </section>
+              }
+
+              <!-- STEP 3 -->
+              @if (currentStep() === 3) {
+                <section class="intake-step">
+                  <div class="intake-step__eyebrow">Step 3 of {{ totalSteps }}</div>
+                  <h1 class="intake-step__title">Tell us about your pet <span class="intake-tag intake-tag--req">Required</span></h1>
+                  <p class="intake-step__sub">The basics that go on your pet's chart.</p>
+                  <div class="intake-grid">
+                    <label class="intake-field"><span>Pet name</span><input type="text" [ngModel]="f.pet.name" (ngModelChange)="patchPet('name', $event)" placeholder="e.g. Bruno" /></label>
+                    <label class="intake-field">
+                      <span>Species</span>
+                      <app-vos-select [options]="speciesOptions" panelTitle="Species" placeholder="Choose one" [ngModel]="f.pet.species" (ngModelChange)="onSpeciesChange($event)" />
+                    </label>
+                    @if (f.pet.species === 'Dog' || f.pet.species === 'Cat') {
+                      <label class="intake-field">
+                        <span>Breed</span>
+                        <app-vos-select [options]="breedOptions(f.pet.species)" panelTitle="Breed" placeholder="Select breed" [ngModel]="f.pet.breed" (ngModelChange)="patchPet('breed', $event)" />
+                      </label>
+                    } @else {
+                      <label class="intake-field"><span>Breed</span><input type="text" [ngModel]="f.pet.breed" (ngModelChange)="patchPet('breed', $event)" placeholder="Breed or mixed" /></label>
+                    }
+                    <label class="intake-field">
+                      <span>Gender</span>
+                      <app-vos-select [options]="genderOptions" panelTitle="Gender" placeholder="Choose one" [ngModel]="f.pet.gender" (ngModelChange)="patchPet('gender', $event)" />
+                    </label>
+                    <label class="intake-field"><span>Age / date of birth</span><input type="text" [ngModel]="f.pet.ageOrDob" (ngModelChange)="patchPet('ageOrDob', $event)" placeholder="e.g. 3 years or 2022-01-15" /></label>
+                    <label class="intake-field"><span>Weight</span><input type="text" [ngModel]="f.pet.weight" (ngModelChange)="patchPet('weight', $event)" placeholder="e.g. 18 kg" /></label>
+                    <label class="intake-field"><span>Microchip <em class="intake-tag intake-tag--opt">Optional</em></span><input type="text" [ngModel]="f.pet.microchip" (ngModelChange)="patchPet('microchip', $event)" /></label>
+                    <label class="intake-field"><span>Color / marks</span><input type="text" [ngModel]="f.pet.colorMarks" (ngModelChange)="patchPet('colorMarks', $event)" /></label>
+                    <label class="intake-field">
+                      <span>Neutered / spayed</span>
+                      <app-vos-select [options]="yesNoOptions" panelTitle="Neutered" placeholder="Select" [ngModel]="f.pet.neutered" (ngModelChange)="patchPet('neutered', $event)" />
+                    </label>
+                  </div>
+                </section>
+              }
+
+              <!-- STEP 4 -->
+              @if (currentStep() === 4) {
+                <section class="intake-step">
+                  <div class="intake-step__eyebrow">Step 4 of {{ totalSteps }}</div>
+                  <h1 class="intake-step__title">Book the visit <span class="intake-tag intake-tag--req">Required</span></h1>
+                  <p class="intake-step__sub">Pick a time and the kind of consultation you need.</p>
+                  <div class="intake-grid">
+                    <label class="intake-field">
+                      <span>Preferred date</span>
+                      <app-vos-date-picker [ngModel]="f.appointment.preferredDate" (ngModelChange)="patchAppointment('preferredDate', $event)" />
+                    </label>
+                    <label class="intake-field">
+                      <span>Preferred time</span>
+                      <app-vos-time-picker [ngModel]="f.appointment.preferredTime" (ngModelChange)="patchAppointment('preferredTime', $event)" />
+                    </label>
+                  </div>
+
+                  <fieldset class="intake-fieldset">
+                    <legend class="intake-glabel">Consultation type</legend>
+                    <div class="intake-cards">
+                      @for (opt of typeOptions; track opt.value) {
+                        <button
+                          type="button"
+                          class="intake-card-opt"
+                          [class.intake-card-opt--on]="f.appointment.consultationType === opt.value"
+                          (click)="selectConsult(opt.value)"
+                        >
+                          <app-icon [name]="opt.icon" size="md" />
+                          <strong>{{ opt.label }}</strong>
+                        </button>
+                      }
+                    </div>
+                  </fieldset>
+
+                  <div class="intake-grid">
+                    <label class="intake-field">
+                      <span>Doctor preference <em class="intake-tag intake-tag--opt">Optional</em></span>
+                      <app-vos-select [options]="doctorPickerOptions(doctors, 'No preference')" panelTitle="Doctor" placeholder="No preference" [ngModel]="f.appointment.doctorPreference" (ngModelChange)="patchAppointment('doctorPreference', $event)" />
+                    </label>
+                    <label class="intake-field">
+                      <span>Reason for visit</span>
+                      <app-vos-select [options]="visitReasonOptions" panelTitle="Reason" placeholder="Choose one" [ngModel]="f.appointment.reasonForVisit" (ngModelChange)="patchAppointment('reasonForVisit', $event)" />
+                    </label>
+                  </div>
+                </section>
+              }
+
+              <!-- STEP 5 -->
+              @if (currentStep() === 5) {
+                <section class="intake-step">
+                  <div class="intake-step__eyebrow">Step 5 of {{ totalSteps }} — Most important</div>
+                  <h1 class="intake-step__title">What's going on? <span class="intake-tag intake-tag--req">Required</span></h1>
+                  <p class="intake-step__sub">This is what the doctor reads first.</p>
+
+                  <button type="button" class="intake-chip" [class.intake-chip--on]="routineOnly()" (click)="setRoutineOnly(!routineOnly())">
+                    This is a routine / wellness visit — no specific complaint
+                  </button>
+
+                  @if (!routineOnly()) {
+                    <div class="intake-grid" style="margin-top: 20px">
+                      <label class="intake-field intake-field--full"><span>Main complaint</span><input type="text" [ngModel]="f.health.mainComplaint" (ngModelChange)="patchHealth('mainComplaint', $event)" placeholder="e.g. Not eating and vomiting" /></label>
+                      <label class="intake-field"><span>Since when?</span><input type="text" [ngModel]="f.health.sinceWhen" (ngModelChange)="patchHealth('sinceWhen', $event)" placeholder="e.g. 2 days" /></label>
+                      <label class="intake-field">
+                        <span>Severity</span>
+                        <div class="intake-seg">
+                          @for (sev of ['Mild', 'Moderate', 'Severe']; track sev) {
+                            <button type="button" class="intake-seg__btn" [class.intake-seg__btn--on]="f.health.severity === sev" [class.intake-seg__btn--severe]="sev === 'Severe' && f.health.severity === sev" [class.intake-seg__btn--mod]="sev === 'Moderate' && f.health.severity === sev" (click)="patchHealth('severity', $any(sev))">{{ sev }}</button>
+                          }
+                        </div>
+                      </label>
+                    </div>
+
+                    <fieldset class="intake-fieldset">
+                      <legend class="intake-glabel">Symptoms observed</legend>
+                      <div class="intake-chips">
+                        @for (sym of healthSymptoms; track sym.key) {
+                          <button type="button" class="intake-chip" [class.intake-chip--on]="f.health[sym.key]" (click)="toggleHealthSymptom(sym.key)">{{ sym.label }}</button>
+                        }
+                      </div>
+                    </fieldset>
+
+                    <div class="intake-grid intake-grid--3">
+                      <label class="intake-field">
+                        <span>Appetite</span>
+                        <app-vos-select [options]="appetiteOptions" panelTitle="Appetite" placeholder="Select" [ngModel]="f.health.appetite" (ngModelChange)="patchHealth('appetite', $event)" />
+                      </label>
+                      <label class="intake-field">
+                        <span>Water intake</span>
+                        <app-vos-select [options]="waterOptions" panelTitle="Water" placeholder="Select" [ngModel]="f.health.waterIntake" (ngModelChange)="patchHealth('waterIntake', $event)" />
+                      </label>
+                      <label class="intake-field"><span>Pain area</span><input type="text" [ngModel]="f.health.painArea" (ngModelChange)="patchHealth('painArea', $event)" /></label>
+                      <label class="intake-field intake-field--full"><span>Injury / accident</span><input type="text" [ngModel]="f.health.injuryAccident" (ngModelChange)="patchHealth('injuryAccident', $event)" /></label>
+                      <label class="intake-field intake-field--full">
+                        <span>Upload photos / videos <em class="intake-tag intake-tag--opt">Optional</em></span>
+                        <input type="file" multiple accept="image/*,video/*" (change)="onProblemMedia($event)" />
+                      </label>
+                    </div>
+                  }
+                </section>
+              }
+
+              <!-- STEP 6 -->
+              @if (currentStep() === 6) {
+                <section class="intake-step">
+                  <div class="intake-step__eyebrow">Step 6 of {{ totalSteps }}</div>
+                  <h1 class="intake-step__title">Health background <span class="intake-tag intake-tag--req">Required</span></h1>
+                  <p class="intake-step__sub">Quick details — skip what doesn't apply.</p>
+
+                  <label class="intake-field intake-field--full"><span>Previous illnesses</span><textarea rows="2" [ngModel]="f.pastMedical.previousIllnesses" (ngModelChange)="patchPastMedical('previousIllnesses', $event)"></textarea></label>
+                  <label class="intake-field intake-field--full"><span>Previous surgeries</span><textarea rows="2" [ngModel]="f.pastMedical.previousSurgeries" (ngModelChange)="patchPastMedical('previousSurgeries', $event)"></textarea></label>
+                  <label class="intake-field intake-field--full"><span>Previous hospitalization</span><textarea rows="2" [ngModel]="f.pastMedical.previousHospitalization" (ngModelChange)="patchPastMedical('previousHospitalization', $event)"></textarea></label>
+
+                  <fieldset class="intake-fieldset">
+                    <legend class="intake-glabel">Chronic conditions</legend>
+                    <div class="intake-chips">
+                      @for (disease of chronicOptions; track disease) {
+                        <button type="button" class="intake-chip" [class.intake-chip--on]="f.pastMedical.chronicDiseases.includes(disease)" (click)="toggleChronic(disease)">{{ disease }}</button>
+                      }
+                    </div>
+                  </fieldset>
+
+                  <div class="intake-acc" [class.intake-acc--open]="isAccordionOpen('vac')">
+                    <button type="button" class="intake-acc__head" (click)="toggleAccordion('vac')">
+                      <span><app-icon name="syringe" size="sm" /> Vaccination history</span>
+                      <app-icon name="arrow-right" size="sm" class="intake-acc__chev" />
+                    </button>
+                    @if (isAccordionOpen('vac')) {
+                      <div class="intake-acc__body">
+                        <div class="intake-grid">
+                          <label class="intake-field">
+                            <span>Vaccinated?</span>
+                            <app-vos-select [options]="yesNoOptions" panelTitle="Vaccinated" placeholder="Select" [ngModel]="f.vaccination.vaccinated" (ngModelChange)="patchVaccination('vaccinated', $event)" />
+                          </label>
+                          <label class="intake-field">
+                            <span>Last vaccination date</span>
+                            <app-vos-date-picker [ngModel]="f.vaccination.lastVaccinationDate" (ngModelChange)="patchVaccination('lastVaccinationDate', $event)" />
+                          </label>
+                          <label class="intake-field intake-field--full"><span>Vaccine names</span><input type="text" [ngModel]="f.vaccination.vaccineNames" (ngModelChange)="patchVaccination('vaccineNames', $event)" /></label>
+                        </div>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="intake-acc" [class.intake-acc--open]="isAccordionOpen('meds')">
+                    <button type="button" class="intake-acc__head" (click)="toggleAccordion('meds')">
+                      <span><app-icon name="pill" size="sm" /> Current medications</span>
+                      <app-icon name="arrow-right" size="sm" class="intake-acc__chev" />
+                    </button>
+                    @if (isAccordionOpen('meds')) {
+                      <div class="intake-acc__body">
+                        <div class="intake-grid">
+                          <label class="intake-field"><span>Medicine name</span><input type="text" [ngModel]="f.medications.medicineName" (ngModelChange)="patchMedications('medicineName', $event)" /></label>
+                          <label class="intake-field"><span>Dosage</span><input type="text" [ngModel]="f.medications.dosage" (ngModelChange)="patchMedications('dosage', $event)" /></label>
+                          <label class="intake-field"><span>Supplements</span><input type="text" [ngModel]="f.medications.supplements" (ngModelChange)="patchMedications('supplements', $event)" /></label>
+                        </div>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="intake-acc" [class.intake-acc--open]="isAccordionOpen('allergy')">
+                    <button type="button" class="intake-acc__head" (click)="toggleAccordion('allergy')">
+                      <span><app-icon name="warning" size="sm" /> Allergies</span>
+                      <app-icon name="arrow-right" size="sm" class="intake-acc__chev" />
+                    </button>
+                    @if (isAccordionOpen('allergy')) {
+                      <div class="intake-acc__body">
+                        <div class="intake-grid intake-grid--3">
+                          <label class="intake-field">
+                            <span>Medicine allergies</span>
+                            <input type="text" [ngModel]="f.allergies.medicine" (ngModelChange)="patchAllergies('medicine', $event)" />
+                            <button type="button" class="intake-link" (click)="setNoneKnown('medicine')">None known</button>
+                          </label>
+                          <label class="intake-field">
+                            <span>Food allergies</span>
+                            <input type="text" [ngModel]="f.allergies.food" (ngModelChange)="patchAllergies('food', $event)" />
+                            <button type="button" class="intake-link" (click)="setNoneKnown('food')">None known</button>
+                          </label>
+                          <label class="intake-field">
+                            <span>Environmental</span>
+                            <input type="text" [ngModel]="f.allergies.environmental" (ngModelChange)="patchAllergies('environmental', $event)" />
+                            <button type="button" class="intake-link" (click)="setNoneKnown('environmental')">None known</button>
+                          </label>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </section>
+              }
+
+              <!-- STEP 7 -->
+              @if (currentStep() === 7) {
+                <section class="intake-step">
+                  <div class="intake-step__eyebrow">Step 7 of {{ totalSteps }}</div>
+                  <h1 class="intake-step__title">A few more details <span class="intake-tag intake-tag--opt">Optional</span></h1>
+                  <p class="intake-step__sub">Helpful context — skip anything that doesn't apply.</p>
+
+                  <div class="intake-grid">
+                    <label class="intake-field">
+                      <span>Food type</span>
+                      <app-vos-select [options]="foodTypeOptions" panelTitle="Food type" placeholder="Select" [ngModel]="f.diet.foodType" (ngModelChange)="patchDiet('foodType', $event)" />
+                    </label>
+                    <label class="intake-field"><span>Brand name</span><input type="text" [ngModel]="f.diet.brandName" (ngModelChange)="patchDiet('brandName', $event)" /></label>
+                    <label class="intake-field"><span>Feeding frequency</span><input type="text" [ngModel]="f.diet.feedingFrequency" (ngModelChange)="patchDiet('feedingFrequency', $event)" /></label>
+                    <label class="intake-field">
+                      <span>Indoor / outdoor</span>
+                      <app-vos-select [options]="indoorOptions" panelTitle="Lifestyle" placeholder="Choose" [ngModel]="f.lifestyle.indoorOutdoor" (ngModelChange)="patchLifestyle('indoorOutdoor', $event)" />
+                    </label>
+                    <label class="intake-field">
+                      <span>Exercise level</span>
+                      <app-vos-select [options]="exerciseOptions" panelTitle="Exercise" placeholder="Choose" [ngModel]="f.lifestyle.exerciseLevel" (ngModelChange)="patchLifestyle('exerciseLevel', $event)" />
+                    </label>
+                    @if (f.pet.neutered !== 'Yes') {
+                      <label class="intake-field">
+                        <span>Pregnant?</span>
+                        <app-vos-select [options]="pregnantOptions" panelTitle="Pregnant" placeholder="Choose" [ngModel]="f.reproductive.pregnant" (ngModelChange)="patchReproductive('pregnant', $event)" />
+                      </label>
+                    }
+                  </div>
+                </section>
+              }
+
+              <!-- STEP 8 -->
+              @if (currentStep() === 8) {
+                <section class="intake-step">
+                  <div class="intake-step__eyebrow">Step 8 of {{ totalSteps }}</div>
+                  <h1 class="intake-step__title">Attach records <span class="intake-tag intake-tag--opt">Optional but helpful</span></h1>
+                  <p class="intake-step__sub">Upload prescriptions, reports, scans, or photos.</p>
+                  <label class="intake-drop">
+                    <app-icon name="paperclip" size="lg" />
+                    <strong>Click to browse files</strong>
+                    <span>Prescriptions, blood/X-ray reports, vaccination card, photos</span>
+                    <input type="file" multiple accept="image/*,video/*,.pdf,.doc,.docx" (change)="onDocFiles($event)" />
+                  </label>
+                  @if (f.documents.medicalRecords.length) {
+                    <p class="intake-files">{{ f.documents.medicalRecords.join(', ') }}</p>
+                  }
+                </section>
+              }
+
+              <!-- STEP 9 -->
+              @if (currentStep() === 9) {
+                <section class="intake-step">
+                  <div class="intake-step__eyebrow">Step 9 of {{ totalSteps }}</div>
+                  <h1 class="intake-step__title">Review &amp; confirm</h1>
+                  <p class="intake-step__sub">Take a last look — you can jump back to fix anything.</p>
+
+                  @for (sec of reviewSections(); track sec.title) {
+                    <div class="intake-review">
+                      <div class="intake-review__head">
+                        <h3>{{ sec.title }}</h3>
+                        <button type="button" class="intake-link" (click)="goToStep(sec.step)">Edit</button>
+                      </div>
+                      <dl>
+                        @for (item of sec.items; track item[0]) {
+                          <div>
+                            <dt>{{ item[0] }}</dt>
+                            <dd [class.intake-review__empty]="!item[1]">{{ item[1] || 'Not provided' }}</dd>
+                          </div>
+                        }
+                      </dl>
+                    </div>
+                  }
+
+                  @if (confirmHint()) {
+                    <p class="intake-confirm-hint">{{ confirmHint() }}</p>
+                  }
+
+                  <label class="intake-consent">
+                    <input
+                      type="checkbox"
+                      [ngModel]="consent()"
+                      (ngModelChange)="consent.set($event)"
+                      [ngModelOptions]="{ standalone: true }"
+                    />
+                    <span>I confirm the information above is accurate to the best of my knowledge, and I consent to the clinic using it to prepare for my pet's visit.</span>
+                  </label>
+                </section>
+              }
+            </div>
+
+            <div class="intake-nav">
+              <button
+                type="button"
+                class="intake-btn intake-btn--ghost"
+                [disabled]="currentStep() <= 1"
+                (click)="prev()"
+              >
+                Back
+              </button>
+              @if (currentStep() < totalSteps) {
+                <button type="button" class="intake-btn intake-btn--primary" (click)="next()">
+                  Continue
+                </button>
+              } @else {
+                <button type="button" class="intake-btn intake-btn--submit" [disabled]="!canConfirm()" (click)="submitIntake()">
+                  Confirm appointment <app-icon name="check" size="sm" />
+                </button>
+              }
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  } @else {
+    <div class="intake-shell intake-shell--success">
+      <div class="intake-card intake-success">
+        <div class="intake-success__icon"><app-icon name="check" size="lg" /></div>
+        <h2>Appointment request sent</h2>
+        <p>We've received your pet's details. The clinic will confirm your slot shortly.</p>
+        <div class="intake-success__ref">{{ refId() }}</div>
+        <div class="intake-success__actions">
+          <button type="button" class="intake-btn intake-btn--ghost" (click)="submitAnother()">Submit another</button>
+          <button type="button" class="intake-btn intake-btn--primary" (click)="finish()">Back to dashboard</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

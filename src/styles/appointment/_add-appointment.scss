@@ -1,0 +1,386 @@
+@use '../variables' as *;
+@use '../mixins' as *;
+
+// ═══════════════════════════════════════════════════════════════════════
+// New / Edit Appointment — Glassmorphism design
+// Matches the Nexus Clinical Portal reference: Plus Jakarta Sans type,
+// frosted-glass panels, blue → indigo gradient accents, soft ambient glow.
+// ═══════════════════════════════════════════════════════════════════════
+
+.appointment-form-page {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 8px 0 40px;
+  font-family: $appt-font;
+  isolation: isolate;
+
+  // Ambient mesh glow sitting behind the glass panels
+  &::before {
+    content: '';
+    position: absolute;
+    top: -60px;
+    right: -80px;
+    width: 360px;
+    height: 360px;
+    background: radial-gradient(circle, rgba($appt-primary-400, 0.28) 0%, rgba($appt-primary-400, 0) 70%);
+    filter: blur(50px);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -40px;
+    left: -100px;
+    width: 320px;
+    height: 320px;
+    background: radial-gradient(circle, rgba($appt-indigo-600, 0.18) 0%, rgba($appt-indigo-600, 0) 70%);
+    filter: blur(50px);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  .appointment-form-section h2,
+  .appointment-form-subsection h3 {
+    color: $text-primary;
+  }
+}
+
+.form-back-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-shrink: 0;
+  align-self: center;
+  line-height: 1;
+  padding: 10px 16px;
+
+  app-icon,
+  .app-icon {
+    display: block;
+    flex-shrink: 0;
+  }
+}
+
+.appointment-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  border-radius: $appt-radius-lg;
+  @include appt-glass-panel;
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+
+  &__back {
+    flex-shrink: 0;
+  }
+
+  h1 {
+    margin: 0;
+    font-family: $appt-font;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: #1e293b;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+
+    .btn-outline,
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: $appt-font;
+      font-weight: 700;
+      border-radius: $appt-radius-pill;
+      font-size: 13px;
+      padding: 10px 20px;
+    }
+
+    // Secondary actions (Close) — frosted glass pill
+    .btn-outline {
+      @include appt-btn-glass;
+      border-radius: $appt-radius-pill;
+    }
+
+    // Primary actions (Save / Submit) — blue → indigo gradient with glow
+    .btn-primary {
+      @include appt-btn-gradient;
+      border-radius: $appt-radius-pill;
+    }
+  }
+}
+
+.appointment-form-card {
+  background: $appt-glass-panel;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid $appt-glass-border;
+  border-radius: $appt-radius-panel;
+  box-shadow: $appt-shadow-glass-lg;
+  overflow: hidden;
+}
+
+.appointment-form-section {
+  padding: 28px 28px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+
+  &--last {
+    padding-bottom: 28px;
+    border-bottom: none;
+  }
+
+  &--compact {
+    padding-bottom: 20px;
+
+    h2 {
+      margin-bottom: 14px;
+    }
+  }
+
+  h2 {
+    margin: 0 0 20px;
+    font-family: $appt-font;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    padding-bottom: 10px;
+    border-bottom: 2px solid $appt-primary-100;
+  }
+}
+
+.appointment-form-subsection {
+  margin-top: 24px;
+  margin-bottom: 8px;
+
+  h3 {
+    margin: 0 0 14px;
+    font-family: $appt-font;
+    font-size: 14px;
+    font-weight: 700;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.7);
+  }
+}
+
+// ── Booking type picker — glass segmented cards ───────────────────────────
+.booking-mode-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+
+  &__option {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: $appt-radius-pill;
+    background: $appt-glass-input;
+    backdrop-filter: blur(8px);
+    cursor: pointer;
+    color: $text-secondary;
+    font-family: $appt-font;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.25s $appt-ease;
+
+    &:hover {
+      background: #ffffff;
+      color: $text-primary;
+      transform: translateY(-1px);
+    }
+
+    &--selected {
+      color: #ffffff;
+      border-color: transparent;
+      background: linear-gradient(135deg, $appt-primary-600 0%, $appt-indigo-600 100%);
+      box-shadow: $appt-shadow-glow-primary;
+
+      .booking-mode-picker__circle {
+        border-color: #fff;
+        background: #fff;
+      }
+    }
+
+    &--emergency.booking-mode-picker__option--selected {
+      background: linear-gradient(135deg, $danger 0%, #b91c1c 100%);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+    }
+  }
+
+  &__circle {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid rgba(148, 163, 184, 0.6);
+    background: transparent;
+    flex-shrink: 0;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  &__label {
+    line-height: 1;
+  }
+}
+
+// ── Appointment type — glass cards ────────────────────────────────────────
+.appointment-type-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+
+  &__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px 16px;
+    border-radius: $appt-radius-card;
+    cursor: pointer;
+    color: $text-secondary;
+    font-family: $appt-font;
+    @include appt-glass-card;
+
+    &--selected {
+      color: $appt-primary-700;
+      background: rgba(255, 255, 255, 0.9);
+      border-color: $appt-primary-500;
+      box-shadow: $appt-shadow-glow-primary;
+      transform: translateY(-2px);
+    }
+
+    span {
+      font-size: 14px;
+      font-weight: 700;
+    }
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+  }
+}
+
+// ── Fields ─────────────────────────────────────────────────────────────
+.appointment-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+
+  .form-field--full {
+    grid-column: 1 / -1;
+  }
+}
+
+.appointment-form-page {
+  .form-field {
+    span {
+      font-family: $appt-font;
+      font-size: 12px;
+      font-weight: 700;
+      color: $text-secondary;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    input,
+    select,
+    textarea {
+      @include appt-glass-input;
+      border-radius: 0.75rem;
+      padding: 10px 14px;
+      font-family: $appt-font;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1e293b;
+
+      &::placeholder {
+        color: #94a3b8;
+      }
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 64px;
+    }
+
+    input[type='file'] {
+      background: transparent;
+      backdrop-filter: none;
+      border: none;
+      padding: 4px 0;
+    }
+  }
+
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .checkbox-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 0.75rem;
+    background: $appt-glass-input;
+    border: 1px solid rgba(226, 232, 240, 0.7);
+    font-family: $appt-font;
+    font-size: 13px;
+    font-weight: 500;
+    color: $text-secondary;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #ffffff;
+      color: $text-primary;
+    }
+
+    input {
+      accent-color: $appt-primary-600;
+    }
+  }
+
+  .file-list {
+    display: block;
+    margin-top: 4px;
+    font-family: $appt-font;
+    font-size: 12px;
+    color: $text-secondary;
+  }
+}

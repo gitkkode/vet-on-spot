@@ -1,0 +1,149 @@
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.login-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $appt-page-bg;
+  padding: 24px;
+  isolation: isolate;
+  overflow: hidden;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.4;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &::before {
+    width: 420px;
+    height: 420px;
+    top: -10%;
+    left: -8%;
+    background: #93c5fd;
+  }
+
+  &::after {
+    width: 380px;
+    height: 380px;
+    bottom: -12%;
+    right: -6%;
+    background: #a5b4fc;
+  }
+
+  &__card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    padding: 36px 32px;
+    border-radius: $appt-radius-panel;
+    @include glass-surface;
+    box-shadow: $appt-shadow-glass-lg;
+  }
+
+  &__logo {
+    text-align: center;
+    margin-bottom: 28px;
+
+    &-icon {
+      width: 56px;
+      height: 56px;
+      background: #fff;
+      border-radius: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      color: $appt-primary-600;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: $appt-shadow-glass-sm;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: $text-primary;
+      margin: 0 0 6px;
+      letter-spacing: -0.02em;
+    }
+
+    p {
+      margin: 0;
+      color: $text-secondary;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: $text-secondary;
+    }
+
+    input {
+      @include appt-glass-input;
+      border-radius: 12px;
+      padding: 11px 14px;
+      font-size: 14px;
+      font-weight: 500;
+      color: $text-primary;
+      width: 100%;
+    }
+  }
+
+  .remember-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: $text-secondary;
+  }
+
+  .forgot-link {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: $appt-primary-600;
+    text-decoration: none;
+  }
+
+  .error-msg {
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: $danger-light;
+    color: $danger;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .btn-primary {
+    width: 100%;
+    margin-top: 4px;
+    padding: 14px 20px;
+  }
+}

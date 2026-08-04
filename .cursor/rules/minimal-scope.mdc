@@ -1,0 +1,11 @@
+---
+description: Keep changes strictly scoped to the requested task
+alwaysApply: true
+---
+
+# Minimal Scope
+
+Only modify the files required for this task.
+
+- Do not refactor, rename, reorganize, or change unrelated code
+- Keep all modifications strictly scoped to the requested feature or bug fix

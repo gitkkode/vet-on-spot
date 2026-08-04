@@ -1,0 +1,13 @@
+---
+description: Summarize changes, risks, and manual testing after completing a task
+alwaysApply: true
+---
+
+# Post-Task Summary
+
+After completing the task, provide:
+
+1. A summary of every modified file
+2. The purpose of each change
+3. Any potential risks or side effects
+4. A list of what should be manually tested before deployment

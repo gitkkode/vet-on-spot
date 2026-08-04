@@ -1,0 +1,657 @@
+@use 'sass:color';
+@use 'variables' as *;
+@use 'mixins' as *;
+@use 'components/picker';
+
+// Sidebar — fixed glass rail (stays in place while main content scrolls)
+.sidebar {
+  position: fixed;
+  top: $shell-gap;
+  left: $shell-gap;
+  z-index: 100;
+  width: $sidebar-width;
+  height: calc(100vh - #{$shell-gap * 2});
+  max-height: calc(100vh - #{$shell-gap * 2});
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 24px;
+  @include glass-surface;
+  box-shadow: $appt-shadow-glass;
+  overflow: hidden;
+
+  &__logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 22px 18px 18px;
+    border-bottom: 1px solid $appt-glass-border-white-50;
+
+    &-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, $appt-primary-500 0%, $appt-indigo-600 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: $appt-shadow-glow-primary;
+    }
+
+    span {
+      font-family: $font-family-heading;
+      font-size: 17px;
+      font-weight: 800;
+      color: $text-primary;
+      letter-spacing: -0.02em;
+    }
+  }
+
+  &__nav {
+    flex: 1;
+    min-height: 0;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    color: $text-secondary;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s $appt-ease;
+    border: 1px solid transparent;
+    background: transparent;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.55);
+      color: $text-primary;
+    }
+
+    &--active {
+      background: rgba(255, 255, 255, 0.7);
+      color: $appt-primary-600;
+      border-color: rgba(255, 255, 255, 0.9);
+      box-shadow: $appt-shadow-glass-sm;
+
+      .sidebar__link-icon {
+        background: linear-gradient(135deg, $appt-primary-500 0%, $appt-indigo-600 100%);
+        color: #fff;
+        box-shadow: $appt-shadow-glow-primary;
+      }
+    }
+
+    &-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.65);
+      color: $text-secondary;
+      flex-shrink: 0;
+      transition: all 0.2s $appt-ease;
+      border: 1px solid rgba(255, 255, 255, 0.7);
+    }
+  }
+
+  &__footer {
+    flex-shrink: 0;
+    padding: 14px 12px 18px;
+    border-top: 1px solid $appt-glass-border-white-50;
+  }
+
+  &__logout {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 14px;
+    color: $danger;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+
+    &:hover {
+      background: $danger-light;
+    }
+  }
+}
+
+// Header — frosted top bar (fixed above scrolling content column)
+.top-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  border-radius: 20px;
+  @include glass-surface;
+  position: relative;
+  flex-shrink: 0;
+  z-index: 50;
+
+  &__search {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: $appt-glass-input;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: 12px;
+    padding: 10px 16px;
+    min-width: 280px;
+    backdrop-filter: blur(8px);
+
+    input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 14px;
+      font-weight: 500;
+      color: $text-primary;
+      width: 100%;
+
+      &::placeholder {
+        color: $text-muted;
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 11px 18px;
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+
+    app-icon,
+    .app-icon {
+      display: block;
+      flex-shrink: 0;
+    }
+  }
+
+  &__icon-btn {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    background: rgba(255, 255, 255, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s $appt-ease;
+
+    &:hover {
+      background: #fff;
+      border-color: $appt-primary-100;
+      color: $appt-primary-600;
+    }
+
+    .badge-dot {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 8px;
+      height: 8px;
+      background: $danger;
+      border-radius: 50%;
+      border: 2px solid #fff;
+    }
+  }
+
+  &__user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    &-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #fff;
+      color: $text-primary;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: $appt-shadow-glass-sm;
+    }
+
+    &-info {
+      text-align: left;
+
+      strong {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: $text-primary;
+      }
+
+      span {
+        font-size: 12px;
+        font-weight: 500;
+        color: $text-secondary;
+      }
+    }
+  }
+}
+
+// Shared cards & tables
+.card {
+  @include card;
+  padding: 20px 24px;
+  transition: all 0.3s $appt-ease;
+
+  &:hover {
+    background: $appt-glass-card-hover;
+    box-shadow: $appt-shadow-glass-lg;
+  }
+
+  &__title {
+    @include stat-label;
+    margin: 0 0 16px;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+
+    h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: $text-primary;
+      text-transform: none;
+    }
+  }
+}
+
+.stat-card {
+  @include card;
+  padding: 20px 24px;
+  transition: all 0.3s $appt-ease;
+
+  &:hover {
+    background: $appt-glass-card-hover;
+    transform: translateY(-2px);
+  }
+
+  &__label {
+    @include stat-label;
+    margin-bottom: 8px;
+  }
+
+  &__value {
+    font-size: 32px;
+    font-weight: 700;
+    color: $text-primary;
+    margin-bottom: 8px;
+  }
+
+  &__badge {
+    @include badge($success-light, $success);
+    margin-bottom: 12px;
+  }
+
+  &__chart {
+    height: 48px;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    margin-top: 12px;
+
+    span {
+      flex: 1;
+      background: $chart-blue-light;
+      border-radius: 4px 4px 0 0;
+      min-height: 8px;
+      transition: background 0.2s, height 0.3s ease;
+
+      &.active {
+        background: $chart-purple;
+      }
+    }
+  }
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th {
+    text-align: left;
+    padding: 12px 14px;
+    @include stat-label;
+    border-bottom: 1px solid $appt-glass-border-white-50;
+    background: rgba(255, 255, 255, 0.35);
+    backdrop-filter: blur(8px);
+  }
+
+  td {
+    padding: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+    color: $text-primary;
+    background: transparent;
+  }
+
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.45);
+  }
+
+  tr.selected td {
+    background: $appt-primary-50;
+  }
+}
+
+.status-pill {
+  @include badge(rgba(255, 255, 255, 0.65), $text-secondary);
+  border: 1px solid $border;
+  backdrop-filter: blur(8px);
+
+  &--pending {
+    @include badge($warning-light, color.adjust($warning, $lightness: -10%));
+  }
+
+  &--accepted,
+  &--available {
+    @include badge($success-light, $success);
+  }
+
+  &--sent {
+    @include badge($info-light, $info);
+  }
+
+  &--completed {
+    @include badge(rgba(248, 250, 252, 0.75), $text-muted);
+    border: 1px solid $border;
+  }
+
+  &--cancelled {
+    @include badge($danger-light, $danger);
+  }
+
+  &--on-trip,
+  &--en-route {
+    @include badge($appt-primary-50, $appt-primary-700);
+  }
+
+  &--online {
+    @include badge($info-light, $blue-accent);
+  }
+
+  &--home {
+    @include badge(rgba(34, 197, 94, 0.12), $green-accent);
+  }
+}
+
+.emergency-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $danger;
+  background: $danger-light;
+  padding: 4px 10px;
+  border-radius: 20px;
+
+  .app-icon {
+    color: $danger;
+    flex-shrink: 0;
+  }
+
+  &--compact {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+
+  &--inline {
+    margin-top: 4px;
+  }
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+
+  button {
+    @include filter-chip;
+    border: 1px solid $border;
+  }
+}
+
+.btn-primary {
+  @include btn-primary;
+  line-height: 1;
+
+  app-icon,
+  .app-icon {
+    display: block;
+    flex-shrink: 0;
+  }
+}
+
+.btn-outline {
+  @include appt-btn-glass;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  color: $text-primary;
+
+  app-icon,
+  .app-icon {
+    display: block;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    border-color: $appt-primary-100;
+    color: $appt-primary-700;
+  }
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: $blue-light;
+  color: $purple-dark;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid $border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+
+    strong {
+      display: block;
+      font-size: 14px;
+      color: $text-primary;
+    }
+
+    span {
+      font-size: 12px;
+      color: $text-secondary;
+    }
+  }
+
+  &__meta {
+    font-size: 14px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+}
+
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+
+  li {
+    position: relative;
+    padding-left: 24px;
+    padding-bottom: 16px;
+    font-size: 13px;
+    color: $text-secondary;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 6px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: $purple-primary;
+    }
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 18px;
+      width: 2px;
+      height: calc(100% - 10px);
+      background: $border;
+    }
+
+    &:last-child::after {
+      display: none;
+    }
+
+    &.pending::before {
+      background: transparent;
+      border: 2px solid $text-muted;
+    }
+
+    strong {
+      color: $text-primary;
+    }
+  }
+}
+
+.fuel-bar {
+  height: 8px;
+  background: $border;
+  border-radius: 4px;
+  overflow: hidden;
+  min-width: 80px;
+
+  &__fill {
+    height: 100%;
+    border-radius: 4px;
+
+    &--high {
+      background: $success;
+    }
+
+    &--mid {
+      background: $warning;
+    }
+
+    &--low {
+      background: $danger;
+    }
+  }
+}
+
+.donut-chart {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: conic-gradient($blue-primary 0% 62%, $border 62% 100%);
+  margin: 0 auto 12px;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 22px;
+    background: $bg-card;
+    border-radius: 50%;
+  }
+}
+
+.donut-legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 12px;
+  color: $text-secondary;
+
+  span::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+  }
+
+  .home::before {
+    background: #5b8ff9;
+  }
+
+  .online::before {
+    background: $green-accent;
+  }
+}

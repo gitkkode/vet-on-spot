@@ -1,0 +1,717 @@
+@use 'sass:color';
+@use '../variables' as *;
+@use '../mixins' as *;
+
+// Slate glass surfaces — page bg shows through (no flat white)
+$dp-glass-card: rgba(241, 245, 249, 0.58);
+$dp-glass-panel: rgba(248, 250, 252, 0.68);
+$dp-glass-elevated: rgba(248, 250, 252, 0.78);
+$dp-glass-input: rgba(226, 232, 240, 0.38);
+$dp-glass-table-head: rgba(226, 232, 240, 0.42);
+$dp-glass-table-row: rgba(248, 250, 252, 0.28);
+$dp-glass-table-hover: rgba(239, 246, 255, 0.72);
+
+.doctor-profile-page {
+  position: relative;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 20px 40px;
+  font-family: $font-family-body;
+  background: transparent;
+  z-index: 1;
+
+  &::before,
+  &::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  &::before {
+    width: 420px;
+    height: 420px;
+    top: -8%;
+    left: -4%;
+    background: #93c5fd;
+  }
+
+  &::after {
+    width: 380px;
+    height: 380px;
+    top: 30%;
+    right: -6%;
+    background: #a5b4fc;
+  }
+
+  &__back {
+    @include appt-btn-glass;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 9px 16px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    color: $text-secondary;
+
+    app-icon,
+    .app-icon {
+      display: block;
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      color: $appt-primary-600;
+      border-color: $appt-primary-100;
+      box-shadow: $appt-shadow-glass-sm;
+    }
+  }
+
+  &__not-found {
+    @include card;
+    padding: 48px 40px;
+    text-align: center;
+    border-radius: $appt-radius-lg;
+    background: $dp-glass-card;
+    border-color: $appt-glass-border-soft;
+
+    h2 {
+      margin: 0 0 16px;
+      font-family: $font-family-heading;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: $text-primary;
+    }
+
+    .btn-outline {
+      @include appt-btn-glass;
+      padding: 10px 18px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      color: $appt-primary-600;
+    }
+  }
+}
+
+.doctor-profile-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 20px;
+  align-items: start;
+
+  @media (max-width: 960px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// Profile sidebar — glass rail (matches main app sidebar language)
+.doctor-profile-sidebar {
+  background: $dp-glass-panel;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid $appt-glass-border-soft;
+  box-shadow: $appt-shadow-glass;
+  padding: 28px 20px 22px;
+  text-align: center;
+  border-radius: $appt-radius-panel;
+  position: sticky;
+  top: 8px;
+  box-shadow: $appt-shadow-glass;
+  transition: none;
+
+  &.card:hover {
+    background: $dp-glass-elevated;
+    box-shadow: $appt-shadow-glass;
+    transform: none;
+  }
+
+  &__avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, $appt-primary-500 0%, $appt-indigo-600 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: $font-family-heading;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    box-shadow: $appt-shadow-glow-primary;
+    border: 3px solid rgba(255, 255, 255, 0.85);
+  }
+
+  h1 {
+    margin: 0 0 6px;
+    font-family: $font-family-heading;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: $text-primary;
+  }
+
+  &__specialty {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: $text-secondary;
+  }
+
+  &__location {
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: $text-muted;
+    margin-bottom: 12px;
+  }
+
+  &__rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: $green-accent;
+    margin-bottom: 20px;
+    padding: 6px 12px;
+    border-radius: $radius-pill;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+
+  &__availability {
+    display: block;
+    text-align: left;
+    margin-bottom: 22px;
+    padding: 14px;
+    border-radius: 16px;
+    background: $dp-glass-input;
+    border: 1px solid $appt-glass-border-white-50;
+
+    span {
+      display: block;
+      @include stat-label;
+      margin-bottom: 8px;
+    }
+
+    .vos-picker__trigger {
+      @include appt-glass-input;
+      min-height: 40px;
+      padding: 9px 12px;
+      border-radius: 12px;
+      border-width: 1px;
+      font-size: 13px;
+      font-weight: 600;
+
+      &:hover:not(:disabled) {
+        background: $dp-glass-elevated;
+        border-color: $appt-primary-100;
+      }
+    }
+  }
+
+  &__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+    padding-top: 4px;
+    border-top: 1px solid $appt-glass-border-white-50;
+  }
+
+  &__nav-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: transparent;
+    color: $text-secondary;
+    font-family: $font-family-body;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s $appt-ease;
+
+    &:hover {
+      background: $dp-glass-card;
+      color: $text-primary;
+    }
+
+    &--active {
+      background: $dp-glass-elevated;
+      color: $appt-primary-600;
+      border-color: $appt-glass-border;
+      box-shadow: $appt-shadow-glass-sm;
+    }
+  }
+
+  &__badge {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    border-radius: $radius-pill;
+    background: linear-gradient(135deg, $warning 0%, color.adjust($warning, $lightness: -8%) 100%);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: $appt-shadow-glow-warning;
+  }
+}
+
+.doctor-profile-main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+// Period filter — glass chip bar (matches dashboard / bookings)
+.doctor-profile-period {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px;
+  margin-top: -4px;
+  margin-bottom: 2px;
+  border-radius: 14px;
+  background: $dp-glass-panel;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid $appt-glass-border-soft;
+  box-shadow: $appt-shadow-glass-sm;
+  align-self: flex-start;
+
+  &--standalone {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  &__btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: $text-secondary;
+    font-family: $font-family-body;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s $appt-ease;
+    white-space: nowrap;
+
+    &:hover {
+      background: $dp-glass-card;
+      color: $text-primary;
+    }
+
+    &--active {
+      background: $dp-glass-elevated;
+      color: $appt-primary-600;
+      border-color: $appt-primary-100;
+      box-shadow: $appt-shadow-glass-sm;
+    }
+  }
+}
+
+// KPI stat row — glass cards with accent strip
+.doctor-profile-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.doctor-profile-stat {
+  @include card;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  position: relative;
+  overflow: hidden;
+  border-radius: $appt-radius-lg;
+  background: $dp-glass-card;
+  border-color: $appt-glass-border-soft;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: $appt-radius-lg $appt-radius-lg 0 0;
+    opacity: 0.9;
+  }
+
+  &:hover {
+    background: $dp-glass-elevated;
+    transform: translateY(-2px);
+  }
+
+  &__icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+
+    &--blue {
+      background: linear-gradient(135deg, $appt-primary-500 0%, $appt-indigo-600 100%);
+      box-shadow: $appt-shadow-glow-primary;
+    }
+
+    &--green {
+      background: linear-gradient(135deg, $green-accent 0%, $green-primary 100%);
+      box-shadow: $appt-shadow-glow-success;
+    }
+
+    &--amber {
+      background: linear-gradient(135deg, $warning 0%, color.adjust($warning, $lightness: -10%) 100%);
+      box-shadow: $appt-shadow-glow-warning;
+    }
+
+    &--teal {
+      background: linear-gradient(135deg, $appt-primary-400 0%, $cyan-accent 100%);
+    }
+  }
+
+  &:has(.doctor-profile-stat__icon--blue)::before {
+    background: $appt-primary-600;
+  }
+
+  &:has(.doctor-profile-stat__icon--green)::before {
+    background: $green-accent;
+  }
+
+  &:has(.doctor-profile-stat__icon--amber)::before {
+    background: $warning;
+  }
+
+  &:has(.doctor-profile-stat__icon--teal)::before {
+    background: $cyan-accent;
+  }
+
+  &__label {
+    display: block;
+    @include stat-label;
+    margin-bottom: 6px;
+  }
+
+  &__value {
+    font-family: $font-family-heading;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: $text-primary;
+    line-height: 1;
+  }
+}
+
+// Content panels — glass workspace cards
+.doctor-profile-panel {
+  @include card;
+  padding: 0;
+  overflow: hidden;
+  border-radius: $appt-radius-lg;
+  background: $dp-glass-card;
+  border-color: $appt-glass-border-soft;
+
+  &.card:hover {
+    background: $dp-glass-elevated;
+    transform: none;
+  }
+
+  &--last {
+    margin-bottom: 0;
+  }
+
+  &__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid $appt-glass-border-white-50;
+    background: $dp-glass-table-head;
+    backdrop-filter: blur(8px);
+    flex-wrap: wrap;
+
+    h2 {
+      margin: 0;
+      font-family: $font-family-heading;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: $text-primary;
+    }
+  }
+
+  &__hint {
+    font-size: 12px;
+    color: $text-muted;
+    font-weight: 600;
+  }
+
+  &__empty {
+    padding: 36px 20px;
+    margin: 0;
+    text-align: center;
+    color: $text-muted;
+    font-size: 14px;
+    font-weight: 500;
+    background: $dp-glass-table-row;
+  }
+}
+
+// Request list — glass row hover
+.doctor-request-list {
+  &__row {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 14px;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid $appt-glass-border-white-50;
+    cursor: pointer;
+    transition: background 0.2s $appt-ease;
+    background: $dp-glass-table-row;
+
+    &:hover {
+      background: $dp-glass-table-hover;
+    }
+
+    &:focus-visible {
+      outline: 2px solid $appt-primary-500;
+      outline-offset: -2px;
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &--emergency {
+      background: rgba(254, 242, 242, 0.55);
+      border-left: 3px solid $danger;
+
+      &:hover {
+        background: rgba(254, 242, 242, 0.75);
+      }
+    }
+  }
+
+  &__avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: $dp-glass-input;
+    border: 1px solid $appt-glass-border-white-50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $appt-primary-600;
+    box-shadow: $appt-shadow-glass-sm;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+
+    strong {
+      font-size: 14px;
+      font-weight: 700;
+      color: $text-primary;
+    }
+
+    span {
+      font-size: 12px;
+      font-weight: 500;
+      color: $text-secondary;
+    }
+  }
+
+  &__meta {
+    font-size: 12px !important;
+    color: $text-muted !important;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s $appt-ease;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+
+    &--accept {
+      background: linear-gradient(135deg, $green-accent 0%, $green-primary 100%);
+      color: #fff;
+      box-shadow: $appt-shadow-glow-success;
+    }
+
+    &--reject {
+      background: linear-gradient(135deg, $danger 0%, color.adjust($danger, $lightness: -8%) 100%);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+    }
+  }
+}
+
+.doctor-appointment-table-wrap {
+  overflow-x: auto;
+  background: $dp-glass-table-row;
+}
+
+.doctor-profile-page {
+  .data-table,
+  .doctor-appointment-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: transparent;
+
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      @include stat-label;
+      color: $text-muted;
+      background: $dp-glass-table-head;
+      border-bottom: 1px solid $appt-glass-border-white-50;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.55);
+      color: $text-primary;
+      background: $dp-glass-table-row;
+      vertical-align: middle;
+    }
+
+    tbody tr:nth-child(even) td {
+      background: rgba(241, 245, 249, 0.42);
+    }
+
+    tbody tr:hover td {
+      background: $dp-glass-table-hover;
+    }
+
+    tbody tr.selected td {
+      background: rgba(219, 234, 254, 0.55);
+    }
+  }
+
+  .status-pill {
+    background: $dp-glass-elevated;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    color: $text-secondary;
+
+    &--completed {
+      background: $dp-glass-card;
+      color: $text-muted;
+    }
+  }
+}
+
+.doctor-appointment-table {
+  &__sub {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: $text-secondary;
+    margin-top: 2px;
+  }
+
+  &__row--clickable {
+    cursor: pointer;
+    transition: background 0.2s $appt-ease;
+  }
+}
+
+.doctor-history-table {
+  &__reason {
+    max-width: 220px;
+    font-size: 12px;
+    font-weight: 500;
+    color: $text-secondary;
+    line-height: 1.45;
+  }
+
+  &__view {
+    @include appt-btn-glass;
+    padding: 7px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: $appt-primary-600;
+    white-space: nowrap;
+
+    &:hover {
+      border-color: $appt-primary-100;
+      box-shadow: $appt-shadow-glass-sm;
+    }
+  }
+}
+
+@media (max-width: 720px) {
+  .doctor-request-list__row {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+
+    .status-pill,
+    .doctor-request-list__actions {
+      grid-column: 2;
+    }
+
+    .doctor-request-list__actions {
+      justify-self: end;
+    }
+  }
+}

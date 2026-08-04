@@ -1,0 +1,246 @@
+@use '../variables' as *;
+@use '../mixins' as *;
+
+.live-map-page {
+  .live-map-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    min-height: calc(100vh - 180px);
+    align-items: stretch;
+  }
+
+  .map-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+
+    .map-filters {
+      @include card;
+      padding: 18px;
+
+      h4 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: $text-secondary;
+        margin: 0 0 12px;
+      }
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        font-size: 14px;
+        color: $text-primary;
+        cursor: pointer;
+
+        input {
+          accent-color: $purple-primary;
+        }
+      }
+    }
+
+    &__list {
+      @include card;
+      padding: 16px;
+
+      h4 {
+        margin: 0 0 12px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: $text-secondary;
+      }
+    }
+
+    &__item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      border: 1.5px solid $border;
+      border-radius: 12px;
+      background: $bg-card;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+
+      &:hover,
+      &--active {
+        border-color: $purple-primary;
+        background: $purple-light;
+      }
+
+      &-icon {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: $brand-primary;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      &-body {
+        flex: 1;
+        min-width: 0;
+
+        strong {
+          display: block;
+          font-size: 13px;
+          color: $text-primary;
+          margin-bottom: 2px;
+        }
+
+        span {
+          display: block;
+          font-size: 11px;
+          color: $text-secondary;
+          margin-bottom: 4px;
+        }
+
+        .status-pill {
+          font-size: 10px;
+          padding: 3px 8px;
+        }
+      }
+    }
+
+    &__distances {
+      @include card;
+      padding: 16px;
+
+      h4 {
+        margin: 0 0 12px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: $text-secondary;
+        line-height: 1.4;
+      }
+    }
+
+    &__dist-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid $border;
+      font-size: 13px;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      div {
+        flex: 1;
+        min-width: 0;
+
+        strong {
+          display: block;
+          font-size: 13px;
+        }
+
+        span {
+          font-size: 11px;
+          color: $text-secondary;
+        }
+      }
+
+      em {
+        font-style: normal;
+        font-size: 11px;
+        font-weight: 700;
+        color: $green-accent;
+        white-space: nowrap;
+      }
+
+      &--doctor {
+        color: $purple-dark;
+      }
+
+      &--vehicle {
+        color: $blue-accent;
+      }
+    }
+  }
+
+  .live-map-main {
+    display: flex;
+    flex-direction: column;
+    min-height: 560px;
+    position: relative;
+
+    app-bangalore-map {
+      flex: 1;
+      min-height: 520px;
+    }
+  }
+
+  .map-container__info-bar {
+    position: relative;
+    background: $bg-card;
+    border: 1px solid $border;
+    border-radius: $radius-card;
+    padding: 16px 20px;
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: $shadow-card;
+
+    strong {
+      display: block;
+      font-size: 15px;
+      color: $text-primary;
+      margin-bottom: 4px;
+    }
+  }
+
+  .map-container__info-sub {
+    display: block;
+    font-size: 13px;
+    color: $text-secondary;
+    margin-bottom: 4px;
+  }
+
+  .map-container__info-area {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: $purple-dark;
+    background: $purple-light;
+    padding: 3px 10px;
+    border-radius: $radius-pill;
+    margin-right: 8px;
+  }
+
+  .map-container__info-dist {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: $green-accent;
+    margin-top: 6px;
+  }
+
+  .map-container__assign-btn {
+    padding: 10px 18px !important;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 1000px) {
+    .live-map-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+}
