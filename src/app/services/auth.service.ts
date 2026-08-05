@@ -92,11 +92,11 @@ export class AuthService {
     }
 
     const email = profile?.email || '';
-    return email.slice(0, 2).toUpperCase() || 'AD';
+    return email.slice(0, 2).toUpperCase();
   }
 
   displayName(): string {
-    return this.profile()?.fullName || this.profile()?.email || 'Admin User';
+    return this.profile()?.fullName?.trim() || this.profile()?.email?.trim() || '';
   }
 
   async login(email: string, password: string): Promise<void> {

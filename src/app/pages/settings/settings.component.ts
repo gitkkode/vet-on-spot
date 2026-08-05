@@ -16,18 +16,18 @@ type SettingsTab = 'profile' | 'notifications' | 'dispatch' | 'transport' | 'acc
 const EMPTY_SETTINGS: PortalSettings = {
   profile: { fullName: '', email: '' },
   notifications: {
-    notifyNewBooking: true,
-    notifyDispatchTimeout: true,
-    notifyLowFuel: true,
+    notifyNewBooking: false,
+    notifyDispatchTimeout: false,
+    notifyLowFuel: false,
   },
   dispatch: {
-    dispatchRadiusKm: 5,
-    requestTimeoutMinutes: 10,
-    maxDoctorsPerRequest: 3,
+    dispatchRadiusKm: 0,
+    requestTimeoutMinutes: 0,
+    maxDoctorsPerRequest: 0,
   },
   transport: {
-    lowFuelThresholdPct: 20,
-    maintenanceReminderKm: 5000,
+    lowFuelThresholdPct: 0,
+    maintenanceReminderKm: 0,
   },
   updatedAt: null,
 };

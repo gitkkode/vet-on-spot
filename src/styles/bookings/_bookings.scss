@@ -552,6 +552,21 @@
     justify-content: center;
     padding: 12px 16px;
   }
+
+  &__status-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: $bg-page;
+    border: 1px solid $appt-glass-border-white-50;
+  }
+
+  &__status-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @keyframes bookings-drawer-in {

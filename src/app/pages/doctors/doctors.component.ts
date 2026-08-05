@@ -74,6 +74,16 @@ type DoctorFilter = 'all' | DoctorStatus;
               <span>Rating: <strong>{{ d.rating }}</strong></span>
             </div>
             <div class="doctor-card__actions">
+              <label class="doctor-card__status-field" (click)="$event.stopPropagation()">
+                <span>Status</span>
+                <app-vos-select
+                  [options]="doctorStatusPickerOptions"
+                  panelTitle="Status"
+                  placeholder="Select status"
+                  [ngModel]="d.status"
+                  (ngModelChange)="updateDoctorStatus(d, $event)"
+                />
+              </label>
               <button
                 type="button"
                 class="btn-outline"
@@ -127,9 +137,9 @@ type DoctorFilter = 'all' | DoctorStatus;
             <label class="form-field">
               <span>Status</span>
               <app-vos-select
-                [options]="doctorStatusOptions"
+                [options]="doctorStatusPickerOptions"
                 panelTitle="Status"
-                placeholder="Available"
+                placeholder="Select status"
                 [(ngModel)]="doctorForm.status"
                 name="doctorStatus"
               />
@@ -196,7 +206,7 @@ export class DoctorsComponent implements OnInit {
 
   readonly specialties = DOCTOR_SPECIALTIES;
   readonly specialtyOptions = toPickerOptions([...DOCTOR_SPECIALTIES], 'Select specialty');
-  readonly doctorStatusOptions = DOCTOR_STATUS_OPTIONS;
+  readonly doctorStatusPickerOptions = DOCTOR_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
   readonly activeFilter = signal<DoctorFilter>('all');
   readonly doctorsList = signal<Doctor[]>([]);
   readonly loading = signal(true);
@@ -261,13 +271,18 @@ export class DoctorsComponent implements OnInit {
       this.formError.set('Please enter a location.');
       return;
     }
+    if (!this.doctorForm.status) {
+      this.formError.set('Please select a status.');
+      return;
+    }
 
     void this.createDoctor();
   }
 
   private async createDoctor(): Promise<void> {
     try {
-      const doctor = await firstValueFrom(this.doctorApi.create({ ...this.doctorForm }));
+      const payload: DoctorForm = { ...this.doctorForm };
+      const doctor = await firstValueFrom(this.doctorApi.create(payload));
       await this.loadDoctors();
       this.activeFilter.set('all');
       this.formError.set('');
@@ -275,6 +290,20 @@ export class DoctorsComponent implements OnInit {
       void this.router.navigate(['/doctors', doctor.id]);
     } catch {
       this.formError.set('Could not save doctor. Please try again.');
+    }
+  }
+
+  updateDoctorStatus(doctor: Doctor, status: DoctorStatus): void {
+    if (!status || status === doctor.status) return;
+    void this.saveDoctorStatus(doctor.id, status);
+  }
+
+  private async saveDoctorStatus(id: string, status: DoctorStatus): Promise<void> {
+    try {
+      const updated = await firstValueFrom(this.doctorApi.setAvailability(id, status));
+      this.doctorsList.update((list) => list.map((d) => (d.id === id ? updated : d)));
+    } catch {
+      await this.loadDoctors();
     }
   }
 }

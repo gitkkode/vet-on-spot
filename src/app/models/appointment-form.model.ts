@@ -2,7 +2,7 @@ import type { IconName } from '../components/icon/icon.types';
 
 export type PetSpecies = 'Dog' | 'Cat' | 'Bird' | 'Rabbit' | 'Others';
 export type ConsultationType = 'Clinic Visit' | 'Home Visit' | 'Online Consultation';
-export type BookingMode = 'emergency' | 'normal';
+export type BookingMode = 'emergency' | 'normal' | '';
 export type SeverityLevel = 'Mild' | 'Moderate' | 'Severe';
 export type AppetiteLevel = 'Normal' | 'Reduced' | 'Not Eating';
 export type YesNo = 'Yes' | 'No';
@@ -184,8 +184,6 @@ export const CAT_BREEDS = [
 ] as const;
 
 export function createEmptyAppointmentForm(): PetAppointmentForm {
-  const today = new Date();
-  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   return {
     owner: { fullName: '', mobile: '', email: '', address: '', emergencyContact: '' },
     pet: {
@@ -200,8 +198,8 @@ export function createEmptyAppointmentForm(): PetAppointmentForm {
       neutered: '',
     },
     appointment: {
-      bookingMode: 'normal',
-      preferredDate: todayIso,
+      bookingMode: '',
+      preferredDate: '',
       preferredTime: '',
       consultationType: '',
       doctorPreference: '',
@@ -298,6 +296,9 @@ export function validateAppointmentForm(form: PetAppointmentForm): string[] {
   if (!form.owner.address.trim()) errors.push('Owner address is required');
   if (!form.pet.breed.trim()) errors.push('Pet breed is required');
   if (!form.pet.ageOrDob.trim()) errors.push('Pet age or date of birth is required');
+  if (!form.appointment.bookingMode) errors.push('Booking mode is required');
+  if (!form.appointment.preferredDate.trim()) errors.push('Preferred date is required');
+  if (!form.appointment.preferredTime.trim()) errors.push('Preferred time is required');
   if (!form.appointment.consultationType) errors.push('Consultation type is required');
   if (!form.appointment.reasonForVisit.trim()) errors.push('Reason for visit is required');
   return errors;

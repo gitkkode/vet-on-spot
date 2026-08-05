@@ -97,6 +97,21 @@ export class BookingApiService {
       .pipe(map((res) => this.unwrap(res)));
   }
 
+  setStatus(id: string, status: Booking['status'], note?: string): Observable<Booking> {
+    return this.http
+      .patch<ApiResponse<Booking>>(`${this.base}/${encodeURIComponent(id)}/status`, { status, note })
+      .pipe(map((res) => this.unwrap(res)));
+  }
+
+  setPaymentStatus(id: string, paymentStatus: Booking['paymentStatus'], note?: string): Observable<Booking> {
+    return this.http
+      .patch<ApiResponse<Booking>>(`${this.base}/${encodeURIComponent(id)}/payment-status`, {
+        paymentStatus,
+        note,
+      })
+      .pipe(map((res) => this.unwrap(res)));
+  }
+
   patchIntake(id: string, section: AppointmentSectionId, data: unknown): Observable<Booking> {
     return this.http
       .patch<ApiResponse<Booking>>(`${this.base}/${encodeURIComponent(id)}/intake`, { section, data })
