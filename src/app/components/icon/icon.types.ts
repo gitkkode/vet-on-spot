@@ -43,6 +43,8 @@ export type IconName =
   | 'more-vertical'
   | 'filter'
   | 'refresh'
-  | 'download';
+  | 'download'
+  | 'eye'
+  | 'eye-off';
 
 export type PetIcon = 'dog' | 'cat' | 'bird' | 'rabbit' | 'paw';

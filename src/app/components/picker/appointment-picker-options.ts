@@ -1,4 +1,4 @@
-import { Doctor } from '../../data/mock-data';
+import { Doctor } from '../../models/doctor.model';
 import { CAT_BREEDS, DOG_BREEDS } from '../../models/appointment-form.model';
 import { PickerOption } from './picker.types';
 import { buildTimeOptions, toPickerOptions } from './picker.utils';

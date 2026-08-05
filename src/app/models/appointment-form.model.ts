@@ -739,7 +739,7 @@ export function getFilledFormDetails(form: PetAppointmentForm): FilledDetailGrou
   return groups;
 }
 
-export function bookingToForm(booking: import('../data/mock-data').Booking): PetAppointmentForm {
+export function bookingToForm(booking: import('./booking.model').Booking): PetAppointmentForm {
   const empty = createEmptyAppointmentForm();
   if (booking.details) {
     const cloned = structuredClone(booking.details);

@@ -22,7 +22,7 @@ import { IconComponent } from '../../components/icon/icon.component';
 export class LogoutComponent implements OnInit {
   constructor(private readonly auth: AuthService) {}
 
-  ngOnInit(): void {
-    this.auth.logout();
+  async ngOnInit(): Promise<void> {
+    await this.auth.logout();
   }
 }

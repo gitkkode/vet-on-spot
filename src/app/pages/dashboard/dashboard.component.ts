@@ -1,33 +1,24 @@
-import { Component, computed, HostListener, inject, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { Booking } from '../../models/booking.model';
+import { Doctor } from '../../models/doctor.model';
+import { Vehicle } from '../../models/vehicle.model';
 import {
-  BOOKINGS,
-  Booking,
-  Doctor,
-  DOCTORS,
-  VEHICLES,
-  assignBookingToDoctor,
   formatDoctorVisitLabel,
   formatSubmittedLabel,
-  getDoctorStatusLabel,
   getStatusLabel,
-  getFuelLevelClass,
-  sortAppointmentsForAssign,
-  sortBookingsByPriority,
-} from '../../data/mock-data';
+} from '../../utils/booking.utils';
+import { getDoctorStatusLabel } from '../../utils/doctor.utils';
+import { getFuelLevelClass } from '../../utils/vehicle.utils';
 import { AppointmentService } from '../../services/appointment.service';
+import { DashboardApiService, DashboardPeriod, DashboardSummary } from '../../services/dashboard-api.service';
+import { DoctorApiService } from '../../services/doctor-api.service';
+import { DispatchApiService } from '../../services/dispatch-api.service';
+import { VehicleApiService } from '../../services/vehicle-api.service';
 import { IconComponent } from '../../components/icon/icon.component';
 
-export type DashboardPeriod = 'today' | 'yesterday' | 'weekly' | 'monthly' | 'quarterly';
-
-interface PeriodMeta {
-  label: string;
-  bookingsLabel: string;
-  comparison: string;
-  changePercent: number;
-  demoTotal: number;
-  demoHomePercent: number;
-}
+export type { DashboardPeriod };
 
 interface ChartBucket {
   label: string;
@@ -84,50 +75,19 @@ interface DonutStats {
   homePercent: number;
 }
 
-const PERIOD_META: Record<DashboardPeriod, PeriodMeta> = {
-  today: {
-    label: 'Today',
-    bookingsLabel: 'Bookings Today',
-    comparison: 'vs yesterday',
-    changePercent: 12,
-    demoTotal: 126,
-    demoHomePercent: 62,
-  },
-  yesterday: {
-    label: 'Yesterday',
-    bookingsLabel: 'Bookings Yesterday',
-    comparison: 'vs prior day',
-    changePercent: 5,
-    demoTotal: 98,
-    demoHomePercent: 58,
-  },
-  weekly: {
-    label: 'Weekly',
-    bookingsLabel: 'Bookings This Week',
-    comparison: 'vs last week',
-    changePercent: 8,
-    demoTotal: 842,
-    demoHomePercent: 58,
-  },
-  monthly: {
-    label: 'Monthly',
-    bookingsLabel: 'Bookings This Month',
-    comparison: 'vs last month',
-    changePercent: 15,
-    demoTotal: 3240,
-    demoHomePercent: 60,
-  },
-  quarterly: {
-    label: 'Quarterly',
-    bookingsLabel: 'Bookings This Quarter',
-    comparison: 'vs last quarter',
-    changePercent: 22,
-    demoTotal: 9650,
-    demoHomePercent: 55,
-  },
+const EMPTY_SUMMARY: DashboardSummary = {
+  period: 'today',
+  label: 'Today',
+  bookingsLabel: 'Bookings Today',
+  comparison: 'vs yesterday',
+  total: 0,
+  changePercent: 0,
+  home: 0,
+  online: 0,
+  clinic: 0,
+  homePercent: 0,
 };
 
-const BUSINESS_START_HOUR = 8;
 const TODAY_TABLE_MAX_ROWS = 7;
 const ASSIGN_TABLE_MAX_ROWS = 7;
 
@@ -148,7 +108,7 @@ const ASSIGN_TABLE_MAX_ROWS = 7;
               type="button"
               class="dashboard-period__btn"
               [class.dashboard-period__btn--active]="selectedPeriod() === p.key"
-              (click)="selectedPeriod.set(p.key)"
+              (click)="selectPeriod(p.key)"
             >
               {{ p.label }}
             </button>
@@ -419,7 +379,7 @@ const ASSIGN_TABLE_MAX_ROWS = 7;
         <aside class="dashboard-doctors-panel">
           <div class="dashboard-doctors-panel__block">
             <h3>Active Doctors</h3>
-            @for (d of activeDoctors; track d.id) {
+            @for (d of activeDoctors(); track d.id) {
               <div class="dashboard-doctor-item dashboard-doctor-item--active">
                 <span class="avatar">{{ d.initials }}</span>
                 <div class="dashboard-doctor-item__info">
@@ -433,7 +393,7 @@ const ASSIGN_TABLE_MAX_ROWS = 7;
           </div>
           <div class="dashboard-doctors-panel__block">
             <h3>Inactive Doctors</h3>
-            @for (d of inactiveDoctors; track d.id) {
+            @for (d of inactiveDoctors(); track d.id) {
               <div class="dashboard-doctor-item dashboard-doctor-item--inactive">
                 <span class="avatar">{{ d.initials }}</span>
                 <div class="dashboard-doctor-item__info">
@@ -459,7 +419,7 @@ const ASSIGN_TABLE_MAX_ROWS = 7;
               </tr>
             </thead>
             <tbody>
-              @for (v of vehicles.slice(0, 4); track v.id) {
+              @for (v of vehicles().slice(0, 4); track v.id) {
                 <tr>
                   <td>{{ v.id }}</td>
                   <td>{{ ridesForPeriod(v.ridesToday) }}</td>
@@ -631,9 +591,9 @@ const ASSIGN_TABLE_MAX_ROWS = 7;
           </header>
           <div class="dashboard-assign-popup__body">
             <p class="dashboard-assign-popup__hint">Select an available doctor to assign this appointment</p>
-            @if (availableDoctors.length > 0) {
+            @if (availableDoctors().length > 0) {
               <div class="dashboard-assign-popup__list">
-                @for (d of availableDoctors; track d.id) {
+                @for (d of availableDoctors(); track d.id) {
                   <button
                     type="button"
                     class="dashboard-assign-popup__doctor"
@@ -655,7 +615,7 @@ const ASSIGN_TABLE_MAX_ROWS = 7;
               <p class="dashboard-assign-popup__empty">No doctors are available right now. Try again later.</p>
             }
           </div>
-          @if (availableDoctors.length > 0) {
+          @if (availableDoctors().length > 0) {
             <footer class="dashboard-assign-popup__footer">
               <button type="button" class="btn-outline" (click)="closeAssignPopup()">Cancel</button>
               <button
@@ -673,8 +633,12 @@ const ASSIGN_TABLE_MAX_ROWS = 7;
     </div>
   `,
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   private readonly appointmentService = inject(AppointmentService);
+  private readonly dashboardApi = inject(DashboardApiService);
+  private readonly dispatchApi = inject(DispatchApiService);
+  private readonly doctorApi = inject(DoctorApiService);
+  private readonly vehicleApi = inject(VehicleApiService);
 
   readonly periods: { key: DashboardPeriod; label: string }[] = [
     { key: 'today', label: 'Today' },
@@ -701,47 +665,27 @@ export class DashboardComponent {
     { key: 'clinic', label: 'Clinic' },
   ];
 
-  readonly bookings = BOOKINGS;
-  readonly doctors = DOCTORS;
-  readonly vehicles = VEHICLES;
+  readonly vehicles = signal<Vehicle[]>([]);
+  readonly dashboardSummary = signal<DashboardSummary>({ ...EMPTY_SUMMARY });
+  readonly chartBuckets = signal<ChartBucket[]>([]);
+  readonly assignQueue = signal<Booking[]>([]);
+  readonly todayAppointments = signal<Booking[]>([]);
+  readonly activeDoctors = signal<Doctor[]>([]);
+  readonly inactiveDoctors = signal<Doctor[]>([]);
+  readonly availableDoctors = signal<Doctor[]>([]);
+  readonly assignLoading = signal(false);
+  readonly dashboardLoading = signal(true);
 
-  readonly stats = computed(() => PERIOD_META[this.selectedPeriod()]);
+  readonly stats = computed(() => this.dashboardSummary());
 
-  readonly assignTableRows = computed((): Booking[] => {
-    this.appointmentService.bookingsVersion();
-    const today = new Date().toISOString().slice(0, 10);
-    return sortAppointmentsForAssign(
-      BOOKINGS.filter(
-        (b) =>
-          b.status === 'pending' ||
-          b.status === 'sent' ||
-          (b.status === 'accepted' && !!b.assignedDoctor),
-      ),
-      today,
-    ).slice(0, ASSIGN_TABLE_MAX_ROWS);
-  });
+  readonly assignTableRows = computed(() => this.assignQueue().slice(0, ASSIGN_TABLE_MAX_ROWS));
 
-  readonly todayAppointments = computed((): Booking[] => {
-    this.appointmentService.bookingsVersion();
-    const today = this.getTodayIso();
-    return sortBookingsByPriority(
-      BOOKINGS.filter((b) => b.scheduledDate === today && b.status !== 'cancelled'),
-    ).slice(0, TODAY_TABLE_MAX_ROWS);
-  });
-
-  readonly awaitingAssignmentCount = computed(() => {
-    this.appointmentService.bookingsVersion();
-    return BOOKINGS.filter((b) => !b.assignedDoctor && (b.status === 'pending' || b.status === 'sent')).length;
-  });
-
-  readonly availableDoctors = DOCTORS.filter((d) => d.status === 'available');
-
-  readonly activeDoctors = DOCTORS.filter((d) => d.status !== 'offline');
-
-  readonly inactiveDoctors = DOCTORS.filter((d) => d.status === 'offline');
+  readonly awaitingAssignmentCount = computed(() =>
+    this.assignQueue().filter((b) => !b.assignedDoctor && (b.status === 'pending' || b.status === 'sent')).length,
+  );
 
   readonly transportChartBars = computed(() => {
-    const list = this.vehicles.slice(0, 4).map((v) => ({
+    const list = this.vehicles().slice(0, 4).map((v) => ({
       id: v.id,
       rides: this.ridesForPeriod(v.ridesToday),
       km: this.kmForPeriod(v.kmToday),
@@ -755,13 +699,8 @@ export class DashboardComponent {
     }));
   });
 
-  readonly periodBookings = computed(() => {
-    this.appointmentService.bookingsVersion();
-    return this.bookings.filter((b) => this.isInPeriod(b, this.selectedPeriod()));
-  });
-
   readonly chartSplineView = computed((): ChartSplineView => {
-    const buckets = this.buildChartBuckets(this.selectedPeriod(), this.periodBookings());
+    const buckets = this.chartBuckets();
     const filter = this.chartLineFilter();
     const visibleIds: ChartSeriesView['id'][] =
       filter === 'all' ? ['total', 'home', 'online', 'clinic'] : [filter];
@@ -812,32 +751,103 @@ export class DashboardComponent {
   });
 
   readonly donutStats = computed((): DonutStats => {
-    const bookings = this.periodBookings();
-    const home = bookings.filter((b) => b.type === 'home').length;
-    const online = bookings.filter((b) => b.type === 'online').length;
-    const total = home + online;
-
-    if (total > 0) {
-      return {
-        home,
-        online,
-        homePercent: Math.round((home / total) * 100),
-      };
-    }
-
-    const meta = this.stats();
-    const demoTotal = meta.demoTotal;
-    const homePercent = meta.demoHomePercent;
-    const demoHome = Math.round((demoTotal * homePercent) / 100);
+    const summary = this.dashboardSummary();
     return {
-      home: demoHome,
-      online: demoTotal - demoHome,
-      homePercent,
+      home: summary.home,
+      online: summary.online,
+      homePercent: summary.homePercent,
     };
   });
 
   statusLabel = getStatusLabel;
   doctorStatus = getDoctorStatusLabel;
+
+  constructor() {
+    effect(() => {
+      const period = this.selectedPeriod();
+      const filter = this.chartLineFilter();
+      void this.loadChart(period, filter);
+    });
+  }
+
+  ngOnInit(): void {
+    void this.loadDashboard();
+  }
+
+  selectPeriod(period: DashboardPeriod): void {
+    this.selectedPeriod.set(period);
+    void this.loadSummary(period);
+  }
+
+  async loadDashboard(): Promise<void> {
+    this.dashboardLoading.set(true);
+    try {
+      await Promise.all([
+        this.loadAssignQueue(),
+        this.loadTodayAppointments(),
+        this.loadDoctorsStatus(),
+        this.loadVehicles(),
+        this.loadSummary(this.selectedPeriod()),
+      ]);
+    } finally {
+      this.dashboardLoading.set(false);
+    }
+  }
+
+  private async loadSummary(period: DashboardPeriod): Promise<void> {
+    try {
+      this.dashboardSummary.set(await firstValueFrom(this.dashboardApi.getSummary(period)));
+    } catch {
+      this.dashboardSummary.set({ ...EMPTY_SUMMARY, period });
+    }
+  }
+
+  private async loadChart(period: DashboardPeriod, filter: ChartLineFilter): Promise<void> {
+    try {
+      const chart = await firstValueFrom(this.dashboardApi.getChart(period, filter));
+      this.chartBuckets.set(chart.buckets);
+    } catch {
+      this.chartBuckets.set([]);
+    }
+  }
+
+  async loadAssignQueue(): Promise<void> {
+    try {
+      this.assignQueue.set(await firstValueFrom(this.dashboardApi.getAssignQueue(ASSIGN_TABLE_MAX_ROWS)));
+    } catch {
+      this.assignQueue.set([]);
+    }
+  }
+
+  private async loadTodayAppointments(): Promise<void> {
+    try {
+      this.todayAppointments.set(
+        await firstValueFrom(this.dashboardApi.getTodayAppointments(TODAY_TABLE_MAX_ROWS)),
+      );
+    } catch {
+      this.todayAppointments.set([]);
+    }
+  }
+
+  private async loadDoctorsStatus(): Promise<void> {
+    try {
+      const status = await firstValueFrom(this.dashboardApi.getDoctorsStatus());
+      this.activeDoctors.set(status.active);
+      this.inactiveDoctors.set(status.inactive);
+    } catch {
+      this.activeDoctors.set([]);
+      this.inactiveDoctors.set([]);
+    }
+  }
+
+  private async loadVehicles(): Promise<void> {
+    try {
+      this.vehicles.set(await firstValueFrom(this.vehicleApi.list()));
+    } catch {
+      this.vehicles.set([]);
+    }
+  }
+
   fuelClass = getFuelLevelClass;
 
   readonly formatSubmittedLabel = formatSubmittedLabel;
@@ -870,6 +880,15 @@ export class DashboardComponent {
     this.openActionMenuId.set(null);
     this.selectedAssignDoctorId.set(null);
     this.assignPopupBooking.set(booking);
+    void this.loadAvailableDoctors();
+  }
+
+  private async loadAvailableDoctors(): Promise<void> {
+    try {
+      this.availableDoctors.set(await firstValueFrom(this.doctorApi.list('available')));
+    } catch {
+      this.availableDoctors.set([]);
+    }
   }
 
   closeAssignPopup(): void {
@@ -884,15 +903,21 @@ export class DashboardComponent {
   confirmAssign(booking: Booking): void {
     const doctorId = this.selectedAssignDoctorId();
     if (!doctorId) return;
-    const doctor = DOCTORS.find((d) => d.id === doctorId);
-    if (!doctor) return;
-    this.assignToDoctor(booking, doctor);
+    void this.assignToDoctor(booking, doctorId);
   }
 
-  assignToDoctor(booking: Booking, doctor: Doctor): void {
-    assignBookingToDoctor(booking, doctor);
-    this.appointmentService.bookingsVersion.update((v) => v + 1);
-    this.closeAssignPopup();
+  private async assignToDoctor(booking: Booking, doctorId: string): Promise<void> {
+    this.assignLoading.set(true);
+    try {
+      await firstValueFrom(this.dispatchApi.assign(booking.id, doctorId));
+      await Promise.all([this.loadAssignQueue(), this.loadTodayAppointments(), this.loadSummary(this.selectedPeriod())]);
+      this.appointmentService.bookingsVersion.update((v) => v + 1);
+      this.closeAssignPopup();
+    } catch {
+      /* popup stays open on failure */
+    } finally {
+      this.assignLoading.set(false);
+    }
   }
 
   editBooking(booking: Booking): void {
@@ -973,22 +998,6 @@ export class DashboardComponent {
     return todayKm * multipliers[this.selectedPeriod()];
   }
 
-  private buildChartBuckets(period: DashboardPeriod, bookings: Booking[]): ChartBucket[] {
-    if (period === 'today') {
-      return this.buildHourlyBuckets(bookings, this.getTodayIso(), this.getCurrentHour(), 'today');
-    }
-    if (period === 'yesterday') {
-      return this.buildHourlyBuckets(bookings, this.getYesterdayIso(), 23, 'yesterday');
-    }
-    if (period === 'weekly') {
-      return this.buildWeeklyBuckets(bookings);
-    }
-    if (period === 'monthly') {
-      return this.buildMonthlyBuckets(bookings);
-    }
-    return this.buildQuarterlyBuckets(bookings);
-  }
-
   private buildSplinePath(points: ChartSeriesPoint[]): string {
     if (points.length === 0) return '';
     if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
@@ -1016,241 +1025,9 @@ export class DashboardComponent {
     return `${line} L ${last.x} ${baseline} L ${first.x} ${baseline} Z`;
   }
 
-  private bucketFromBookings(bookings: Booking[]): Omit<ChartBucket, 'label'> {
-    return {
-      total: bookings.length,
-      home: bookings.filter((b) => b.type === 'home').length,
-      online: bookings.filter((b) => b.type === 'online').length,
-      clinic: bookings.filter((b) => b.type === 'clinic').length,
-    };
-  }
-
-  private demoBucket(period: DashboardPeriod, index: number): Omit<ChartBucket, 'label'> {
-    const total = this.demoBucketCount(period, index);
-    const home = Math.round(total * 0.55);
-    const online = Math.round(total * 0.28);
-    const clinic = Math.max(0, total - home - online);
-    return { total, home, online, clinic };
-  }
-
-  private buildHourlyBuckets(
-    bookings: Booking[],
-    dateIso: string,
-    maxHour: number,
-    period: 'today' | 'yesterday',
-  ): ChartBucket[] {
-    const start = BUSINESS_START_HOUR;
-    const end = Math.max(start, maxHour);
-    const buckets: ChartBucket[] = [];
-
-    for (let hour = start; hour <= end; hour++) {
-      const hourBookings = bookings.filter((b) => {
-        if (b.scheduledDate !== dateIso) return false;
-        return this.getBookingHour(b) === hour;
-      });
-      const counts = this.bucketFromBookings(hourBookings);
-      const useDemo = counts.total === 0;
-      const demo = this.demoBucket(period, buckets.length);
-
-      buckets.push({
-        label: this.formatHourLabel(hour),
-        total: useDemo ? demo.total : counts.total,
-        home: useDemo ? demo.home : counts.home,
-        online: useDemo ? demo.online : counts.online,
-        clinic: useDemo ? demo.clinic : counts.clinic,
-      });
-    }
-
-    return buckets;
-  }
-
-  private buildWeeklyBuckets(bookings: Booking[]): ChartBucket[] {
-    const days: { iso: string; label: string }[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(today.getDate() - i);
-      days.push({
-        iso: this.toIso(d),
-        label: d.toLocaleDateString('en-US', { weekday: 'short' }),
-      });
-    }
-
-    return days.map((day, i) => {
-      const dayBookings = bookings.filter((b) => b.scheduledDate === day.iso);
-      const counts = this.bucketFromBookings(dayBookings);
-      const useDemo = counts.total === 0;
-      const demo = this.demoBucket('weekly', i);
-
-      return {
-        label: day.label,
-        total: useDemo ? demo.total : counts.total,
-        home: useDemo ? demo.home : counts.home,
-        online: useDemo ? demo.online : counts.online,
-        clinic: useDemo ? demo.clinic : counts.clinic,
-      };
-    });
-  }
-
-  private buildMonthlyBuckets(bookings: Booking[]): ChartBucket[] {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-    const monthShort = now.toLocaleDateString('en-US', { month: 'short' });
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const step = 5;
-    const buckets: ChartBucket[] = [];
-
-    for (let start = 1; start <= daysInMonth; start += step) {
-      const end = Math.min(start + step - 1, daysInMonth);
-      const rangeBookings = bookings.filter((b) => {
-        const [y, m, d] = b.scheduledDate.split('-').map(Number);
-        return y === year && m === month + 1 && d >= start && d <= end;
-      });
-
-      const counts = this.bucketFromBookings(rangeBookings);
-      const useDemo = counts.total === 0;
-      const demo = this.demoBucket('monthly', buckets.length);
-
-      buckets.push({
-        label: start === end ? `${monthShort} ${start}` : `${monthShort} ${start}–${end}`,
-        total: useDemo ? demo.total : counts.total,
-        home: useDemo ? demo.home : counts.home,
-        online: useDemo ? demo.online : counts.online,
-        clinic: useDemo ? demo.clinic : counts.clinic,
-      });
-    }
-
-    return buckets;
-  }
-
-  private buildQuarterlyBuckets(bookings: Booking[]): ChartBucket[] {
-    const now = new Date();
-    const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
-    const months = [0, 1, 2].map((offset) => {
-      const d = new Date(now.getFullYear(), quarterStartMonth + offset, 1);
-      return {
-        month: d.getMonth() + 1,
-        year: d.getFullYear(),
-        label: d.toLocaleDateString('en-US', { month: 'short' }),
-      };
-    });
-
-    return months.map((m, i) => {
-      const monthBookings = bookings.filter((b) => {
-        const [y, mo] = b.scheduledDate.split('-').map(Number);
-        return y === m.year && mo === m.month;
-      });
-      const counts = this.bucketFromBookings(monthBookings);
-      const useDemo = counts.total === 0;
-      const demo = this.demoBucket('quarterly', i);
-      return {
-        label: m.label,
-        total: useDemo ? demo.total : counts.total,
-        home: useDemo ? demo.home : counts.home,
-        online: useDemo ? demo.online : counts.online,
-        clinic: useDemo ? demo.clinic : counts.clinic,
-      };
-    });
-  }
-
-  private demoBucketCount(period: DashboardPeriod, index: number): number {
-    const hourlyWeights = [6, 9, 12, 14, 16, 18, 15, 13, 11, 10, 8, 7, 9, 12, 14, 11];
-    const dailyWeights = [22, 28, 35, 31, 38, 44, 40];
-    const rangeWeights = [18, 24, 31, 28, 35, 42, 38];
-
-    if (period === 'today' || period === 'yesterday') {
-      const scale = PERIOD_META[period].demoTotal / 140;
-      return Math.max(2, Math.round(hourlyWeights[index % hourlyWeights.length] * scale));
-    }
-
-    if (period === 'weekly') {
-      const scale = PERIOD_META.weekly.demoTotal / 240;
-      return Math.max(4, Math.round(dailyWeights[index % dailyWeights.length] * scale));
-    }
-
-    const scale = PERIOD_META[period].demoTotal / 1200;
-    return Math.max(0, Math.round(rangeWeights[index % rangeWeights.length] * scale));
-  }
-
   private formatHourLabel(hour: number): string {
     const period = hour >= 12 ? 'PM' : 'AM';
     const display = hour % 12 || 12;
     return `${display} ${period}`;
-  }
-
-  private getBookingHour(booking: Booking): number {
-    return Number(booking.scheduledTime.split(':')[0]);
-  }
-
-  private bookingMinutes(booking: Booking): number {
-    const [h, m] = booking.scheduledTime.split(':').map(Number);
-    return h * 60 + m;
-  }
-
-  private nowMinutes(): number {
-    const now = new Date();
-    return now.getHours() * 60 + now.getMinutes();
-  }
-
-  private isUpToNow(booking: Booking): boolean {
-    if (booking.scheduledDate !== this.getTodayIso()) return true;
-    return this.bookingMinutes(booking) <= this.nowMinutes();
-  }
-
-  private getCurrentHour(): number {
-    return new Date().getHours();
-  }
-
-  private getTodayIso(): string {
-    return this.toIso(new Date());
-  }
-
-  private getYesterdayIso(): string {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return this.toIso(d);
-  }
-
-  private toIso(date: Date): string {
-    const y = date.getFullYear();
-    const m = (date.getMonth() + 1).toString().padStart(2, '0');
-    const d = date.getDate().toString().padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
-
-  private isInPeriod(booking: Booking, period: DashboardPeriod): boolean {
-    const date = booking.scheduledDate;
-
-    if (period === 'today') {
-      return date === this.getTodayIso() && this.isUpToNow(booking);
-    }
-    if (period === 'yesterday') {
-      return date === this.getYesterdayIso();
-    }
-    if (period === 'weekly') {
-      const d = new Date(date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const start = new Date(today);
-      start.setDate(today.getDate() - 6);
-      d.setHours(0, 0, 0, 0);
-      return d >= start && d <= today;
-    }
-    if (period === 'monthly') {
-      const now = new Date();
-      const [y, m] = date.split('-').map(Number);
-      return y === now.getFullYear() && m === now.getMonth() + 1;
-    }
-    if (period === 'quarterly') {
-      const now = new Date();
-      const [y, m] = date.split('-').map(Number);
-      const qStart = Math.floor(now.getMonth() / 3) * 3 + 1;
-      const qEnd = qStart + 2;
-      return y === now.getFullYear() && m >= qStart && m <= qEnd;
-    }
-    return true;
   }
 }

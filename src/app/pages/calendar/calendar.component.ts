@@ -1,13 +1,14 @@
-import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { Booking } from '../../models/booking.model';
 import {
-  BOOKINGS,
-  Booking,
   getAcceptanceLabel,
   getEmergencySlaLabel,
   getStatusLabel,
   sortBookingsByPriority,
-} from '../../data/mock-data';
+} from '../../utils/booking.utils';
+import { BookingApiService } from '../../services/booking-api.service';
 import { IconComponent } from '../../components/icon/icon.component';
 
 interface CalendarDay {
@@ -105,7 +106,9 @@ interface CalendarDay {
           </div>
 
           <div class="calendar-drawer__body">
-            @if (dayBookings().length > 0) {
+            @if (dayLoading()) {
+              <p class="calendar-drawer__empty">Loading bookings…</p>
+            } @else if (dayBookings().length > 0) {
               <div class="calendar-drawer__list">
                 @for (b of dayBookings(); track b.id) {
                   <article
@@ -232,13 +235,17 @@ interface CalendarDay {
 export class CalendarComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly bookingApi = inject(BookingApiService);
 
   readonly weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  readonly calendarMonth = signal(new Date(2026, 6, 1));
-  readonly selectedDate = signal('2026-07-02');
+  readonly calendarMonth = signal(this.startOfMonth(new Date()));
+  readonly selectedDate = signal(this.toIso(new Date()));
   readonly selectedBooking = signal<Booking | null>(null);
   readonly drawerOpen = signal(false);
+  readonly dayBookings = signal<Booking[]>([]);
+  readonly dayLoading = signal(false);
+  private readonly monthSummary = signal<Record<string, { count: number; hasEmergency: boolean }>>({});
 
   readonly statusLabel = getStatusLabel;
   readonly acceptanceLabel = getAcceptanceLabel;
@@ -256,26 +263,23 @@ export class CalendarComponent implements OnInit {
     const startOffset = firstDay.getDay();
     const gridStart = new Date(year, monthIndex, 1 - startOffset);
     const todayIso = this.toIso(new Date());
+    const summary = this.monthSummary();
 
     return Array.from({ length: 42 }, (_, i) => {
       const date = new Date(gridStart);
       date.setDate(gridStart.getDate() + i);
       const iso = this.toIso(date);
+      const daySummary = summary[iso];
       return {
         date,
         iso,
         day: date.getDate(),
         isCurrentMonth: date.getMonth() === monthIndex,
         isToday: iso === todayIso,
-        bookingCount: BOOKINGS.filter((b) => b.scheduledDate === iso).length,
-        hasEmergency: BOOKINGS.some((b) => b.scheduledDate === iso && b.isEmergency),
+        bookingCount: daySummary?.count ?? 0,
+        hasEmergency: daySummary?.hasEmergency ?? false,
       };
     });
-  });
-
-  readonly dayBookings = computed(() => {
-    const iso = this.selectedDate();
-    return sortBookingsByPriority(BOOKINGS.filter((b) => b.scheduledDate === iso));
   });
 
   readonly selectedDateLabel = computed(() => {
@@ -288,13 +292,21 @@ export class CalendarComponent implements OnInit {
     });
   });
 
+  constructor() {
+    effect(() => {
+      void this.loadMonthSummary(this.calendarMonth());
+    });
+  }
+
   @HostListener('document:keydown.escape')
   onEscape(): void {
     if (this.drawerOpen()) this.closeDrawer();
   }
 
   ngOnInit(): void {
-    this.route.queryParamMap.subscribe((params) => this.applyQueryParams(params));
+    this.route.queryParamMap.subscribe((params) => {
+      void this.applyQueryParams(params);
+    });
   }
 
   detailQueryParams(bookingId: string): Record<string, string> {
@@ -307,9 +319,8 @@ export class CalendarComponent implements OnInit {
 
   selectDate(iso: string): void {
     this.selectedDate.set(iso);
-    const bookings = sortBookingsByPriority(BOOKINGS.filter((b) => b.scheduledDate === iso));
-    this.selectedBooking.set(bookings[0] ?? null);
     this.drawerOpen.set(true);
+    void this.loadDayBookings(iso);
     this.syncUrl();
   }
 
@@ -344,14 +355,51 @@ export class CalendarComponent implements OnInit {
     return `${hour}:${m.toString().padStart(2, '0')} ${period}`;
   }
 
-  private toIso(date: Date): string {
-    const y = date.getFullYear();
-    const m = (date.getMonth() + 1).toString().padStart(2, '0');
-    const d = date.getDate().toString().padStart(2, '0');
-    return `${y}-${m}-${d}`;
+  private async loadMonthSummary(month: Date): Promise<void> {
+    try {
+      const key = this.monthKey(month);
+      const res = await firstValueFrom(this.bookingApi.getCalendarMonth(key));
+      const map: Record<string, { count: number; hasEmergency: boolean }> = {};
+      for (const day of res.days) {
+        map[day.date] = { count: day.count, hasEmergency: day.hasEmergency };
+      }
+      this.monthSummary.set(map);
+    } catch {
+      this.monthSummary.set({});
+    }
   }
 
-  private applyQueryParams(params: { get: (key: string) => string | null }): void {
+  private async loadDayBookings(iso: string, preferredBookingId?: string | null): Promise<void> {
+    this.dayLoading.set(true);
+    try {
+      const bookings = sortBookingsByPriority(
+        await firstValueFrom(this.bookingApi.list({ scheduledDate: iso, limit: 100 })),
+      );
+      this.dayBookings.set(bookings);
+
+      if (preferredBookingId) {
+        const match = bookings.find((b) => b.id === preferredBookingId);
+        if (match) {
+          this.selectedBooking.set(match);
+          return;
+        }
+        try {
+          this.selectedBooking.set(await firstValueFrom(this.bookingApi.getById(preferredBookingId)));
+          return;
+        } catch {
+          /* fall through */
+        }
+      }
+      this.selectedBooking.set(bookings[0] ?? null);
+    } catch {
+      this.dayBookings.set([]);
+      this.selectedBooking.set(null);
+    } finally {
+      this.dayLoading.set(false);
+    }
+  }
+
+  private async applyQueryParams(params: { get: (key: string) => string | null }): Promise<void> {
     const date = params.get('date');
     const bookingId = params.get('booking');
 
@@ -360,15 +408,13 @@ export class CalendarComponent implements OnInit {
       const [y, m] = date.split('-').map(Number);
       this.calendarMonth.set(new Date(y, m - 1, 1));
       this.drawerOpen.set(true);
+      await this.loadDayBookings(date, bookingId);
+      return;
     }
 
-    if (bookingId) {
-      const booking = BOOKINGS.find((b) => b.id === bookingId) ?? null;
-      this.selectedBooking.set(booking);
-    } else if (date) {
-      const bookings = sortBookingsByPriority(BOOKINGS.filter((b) => b.scheduledDate === date));
-      this.selectedBooking.set(bookings[0] ?? null);
-    }
+    this.drawerOpen.set(false);
+    this.selectedBooking.set(null);
+    this.dayBookings.set([]);
   }
 
   private syncUrl(): void {
@@ -382,5 +428,22 @@ export class CalendarComponent implements OnInit {
       queryParams: { date, booking },
       replaceUrl: true,
     });
+  }
+
+  private startOfMonth(date: Date): Date {
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+  }
+
+  private monthKey(month: Date): string {
+    const y = month.getFullYear();
+    const m = (month.getMonth() + 1).toString().padStart(2, '0');
+    return `${y}-${m}`;
+  }
+
+  private toIso(date: Date): string {
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 }

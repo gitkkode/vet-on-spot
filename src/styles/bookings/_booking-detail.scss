@@ -355,4 +355,70 @@
       grid-template-columns: 1fr;
     }
   }
+
+  &__files,
+  &__payments {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 20px 20px;
+  }
+
+  &__file-row,
+  &__payment-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+    padding: 12px 14px;
+    border: 1px solid $border;
+    border-radius: $radius-card;
+    text-decoration: none;
+    color: inherit;
+
+    strong {
+      color: $text-primary;
+    }
+
+    span,
+    em {
+      font-size: 13px;
+      color: $text-secondary;
+    }
+  }
+
+  &__file-row:hover {
+    border-color: $brand-primary;
+    background: rgba($brand-primary, 0.04);
+  }
+
+  &__modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(26, 43, 60, 0.45);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  &__modal {
+    width: min(420px, 100%);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    h3 {
+      margin: 0;
+    }
+  }
+
+  &__modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+  }
 }

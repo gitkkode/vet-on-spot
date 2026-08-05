@@ -1,14 +1,12 @@
-import { Component, computed, signal } from '@angular/core';
-import {
-  BOOKINGS,
-  DOCTORS,
-  VEHICLES,
-  Booking,
-  Doctor,
-  acceptBookingForDoctor,
-  getEmergencySlaLabel,
-  sortBookingsByPriority,
-} from '../../data/mock-data';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { firstValueFrom } from 'rxjs';
+import { Booking } from '../../models/booking.model';
+import { Doctor } from '../../models/doctor.model';
+import { Vehicle } from '../../models/vehicle.model';
+import { getEmergencySlaLabel, sortBookingsByPriority } from '../../utils/booking.utils';
+import { DispatchApiService, DoctorSuggestion } from '../../services/dispatch-api.service';
+import { DoctorApiService } from '../../services/doctor-api.service';
+import { VehicleApiService } from '../../services/vehicle-api.service';
 import {
   BangaloreMapComponent,
   BangaloreMapMarker,
@@ -24,11 +22,6 @@ import {
 } from '../../data/map-markers';
 import { IconComponent } from '../../components/icon/icon.component';
 
-interface DoctorWithDistance extends Doctor {
-  computedDistanceKm: number;
-  etaMin: number;
-}
-
 @Component({
   selector: 'app-dispatch',
   imports: [IconComponent, BangaloreMapComponent],
@@ -39,9 +32,18 @@ interface DoctorWithDistance extends Doctor {
         <p>Live Bangalore map — doctors, vehicles & booking locations with distance from client</p>
       </div>
 
+      @if (loadError()) {
+        <p class="dispatch-page__error">{{ loadError() }}</p>
+      }
+
       <div class="dispatch-layout">
         <div class="dispatch-queue">
           <h3 class="card__title">Incoming Queue</h3>
+          @if (loading()) {
+            <p class="dispatch-page__loading">Loading queue…</p>
+          } @else if (queue().length === 0) {
+            <p class="dispatch-page__empty">No pending or sent bookings</p>
+          }
           @for (b of queue(); track b.id) {
             <div
               class="queue-card"
@@ -154,7 +156,7 @@ interface DoctorWithDistance extends Doctor {
                 <button
                   type="button"
                   class="btn-primary dispatch-action-btn"
-                  [disabled]="selectedDoctors().size === 0 || b.status === 'sent'"
+                  [disabled]="selectedDoctors().size === 0 || b.status === 'sent' || actionLoading()"
                   (click)="sendRequest()"
                 >
                   {{ b.status === 'sent' ? 'Request Sent' : 'Send Request to Selected Doctors' }}
@@ -172,7 +174,7 @@ interface DoctorWithDistance extends Doctor {
                       <button
                         type="button"
                         class="dispatch-accept-btn"
-                        [disabled]="d.status !== 'available'"
+                        [disabled]="d.status !== 'available' || actionLoading()"
                         (click)="acceptForDoctor(d)"
                       >
                         <span class="avatar">{{ d.initials }}</span>
@@ -206,55 +208,40 @@ interface DoctorWithDistance extends Doctor {
     </div>
   `,
 })
-export class DispatchComponent {
+export class DispatchComponent implements OnInit {
+  private readonly dispatchApi = inject(DispatchApiService);
+  private readonly doctorApi = inject(DoctorApiService);
+  private readonly vehicleApi = inject(VehicleApiService);
+
   readonly emergencySla = getEmergencySlaLabel;
   readonly formatDistance = formatDistance;
   readonly bookingGeo = bookingGeo;
 
-  readonly queue = signal(
-    sortBookingsByPriority(BOOKINGS.filter((b) => ['pending', 'sent'].includes(b.status))),
-  );
-
-  readonly selected = signal<Booking | null>(
-    sortBookingsByPriority(BOOKINGS.filter((b) => ['pending', 'sent'].includes(b.status)))[0] ?? null,
-  );
-
+  readonly loading = signal(true);
+  readonly loadError = signal('');
+  readonly actionLoading = signal(false);
+  readonly queue = signal<Booking[]>([]);
+  readonly doctorsList = signal<Doctor[]>([]);
+  readonly vehiclesList = signal<Vehicle[]>([]);
+  readonly selected = signal<Booking | null>(null);
   readonly selectedDoctors = signal<Set<string>>(new Set());
   readonly sentDoctorIds = signal<string[]>([]);
   readonly selectedMapId = signal<string | null>(null);
+  readonly nearbyDoctors = signal<DoctorSuggestion[]>([]);
+  readonly clientArea = signal('—');
 
   readonly mapMarkers = computed((): BangaloreMapMarker[] => {
     const booking = this.selected();
     if (!booking) return [];
-    return buildDispatchMapMarkers(booking, DOCTORS, VEHICLES);
-  });
-
-  readonly clientArea = computed(() => {
-    const b = this.selected();
-    return b ? bookingGeo(b).area : '—';
-  });
-
-  readonly nearbyDoctors = computed((): DoctorWithDistance[] => {
-    const booking = this.selected();
-    if (!booking) return [];
-    const client = bookingGeo(booking);
-    return DOCTORS.filter((d) => d.status !== 'offline')
-      .map((d) => {
-        const geo = doctorGeo(d);
-        if (!geo) return null;
-        const km = distanceKm(client, geo);
-        return { ...d, computedDistanceKm: km, etaMin: estimateEtaMinutes(km) };
-      })
-      .filter((d): d is DoctorWithDistance => d != null)
-      .sort((a, b) => a.computedDistanceKm - b.computedDistanceKm)
-      .slice(0, 5);
+    return buildDispatchMapMarkers(booking, this.doctorsList(), this.vehiclesList());
   });
 
   readonly nearbyVehicles = computed(() => {
     const booking = this.selected();
     if (!booking) return [];
     const client = bookingGeo(booking);
-    return VEHICLES.filter((v) => v.status === 'available' || v.status === 'on-trip')
+    return this.vehiclesList()
+      .filter((v) => v.status === 'available' || v.status === 'on-trip')
       .map((v) => {
         const geo = vehicleGeo(v);
         if (!geo) return null;
@@ -296,8 +283,39 @@ export class DispatchComponent {
     return 'Awaiting dispatch — select nearby doctors on the map';
   });
 
+  ngOnInit(): void {
+    void this.bootstrap();
+  }
+
+  private async bootstrap(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set('');
+    try {
+      const [queue, doctors, vehicles] = await Promise.all([
+        firstValueFrom(this.dispatchApi.getQueue()),
+        firstValueFrom(this.doctorApi.list()),
+        firstValueFrom(this.vehicleApi.list()),
+      ]);
+      const sorted = sortBookingsByPriority(queue);
+      this.queue.set(sorted);
+      this.doctorsList.set(doctors);
+      this.vehiclesList.set(vehicles);
+      const first = sorted[0] ?? null;
+      this.selected.set(first);
+      if (first) {
+        this.selectedMapId.set(first.id);
+        await this.loadSuggestions(first);
+      }
+    } catch {
+      this.loadError.set('Could not load dispatch queue from the server.');
+      this.queue.set([]);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
   getDoctorById(id: string): Doctor | undefined {
-    return DOCTORS.find((d) => d.id === id);
+    return this.doctorsList().find((d) => d.id === id);
   }
 
   selectBooking(b: Booking): void {
@@ -305,11 +323,12 @@ export class DispatchComponent {
     this.selectedMapId.set(b.id);
     this.selectedDoctors.set(new Set(b.requestedDoctorIds ?? []));
     this.sentDoctorIds.set(b.requestedDoctorIds ?? []);
+    void this.loadSuggestions(b);
   }
 
   onMapMarkerSelect(id: string): void {
     this.selectedMapId.set(id);
-    const doctor = DOCTORS.find((d) => d.id === id);
+    const doctor = this.getDoctorById(id);
     if (doctor && doctor.status === 'available') {
       this.toggleDoctor(id, doctor.status);
     }
@@ -325,46 +344,55 @@ export class DispatchComponent {
 
   sendRequest(): void {
     const b = this.selected();
-    if (!b || this.selectedDoctors().size === 0) return;
-
-    const doctorIds = [...this.selectedDoctors()];
-    this.sentDoctorIds.set(doctorIds);
-
-    const names = doctorIds
-      .map((id) => DOCTORS.find((d) => d.id === id)?.name)
-      .filter(Boolean)
-      .join(', ');
-
-    b.status = 'sent';
-    b.requestedDoctorIds = doctorIds;
-    b.history.push({
-      time: 'Now',
-      label: `Request sent to ${names}`,
-      done: true,
+    if (!b || this.selectedDoctors().size === 0 || b.status !== 'pending') return;
+    void this.runAction(async () => {
+      const doctorIds = [...this.selectedDoctors()];
+      const updated = await firstValueFrom(this.dispatchApi.dispatch(b.id, doctorIds));
+      await this.refreshAfterBookingUpdate(updated);
     });
-    b.history.push({
-      time: '—',
-      label: 'Waiting for doctor or admin acceptance',
-      done: false,
-    });
-
-    this.refreshQueue();
   }
 
   acceptForDoctor(doctor: Doctor): void {
     const b = this.selected();
     if (!b || doctor.status !== 'available') return;
-
-    acceptBookingForDoctor(b, doctor, true);
-    this.refreshQueue();
-    this.selected.set(b);
-    this.sentDoctorIds.set([]);
-    this.selectedDoctors.set(new Set());
+    void this.runAction(async () => {
+      const updated = await firstValueFrom(this.dispatchApi.adminAccept(b.id, doctor.id));
+      await this.refreshAfterBookingUpdate(updated);
+      this.sentDoctorIds.set([]);
+      this.selectedDoctors.set(new Set());
+    });
   }
 
-  private refreshQueue(): void {
-    this.queue.set(
-      sortBookingsByPriority(BOOKINGS.filter((bk) => ['pending', 'sent'].includes(bk.status))),
-    );
+  private async loadSuggestions(booking: Booking): Promise<void> {
+    try {
+      const result = await firstValueFrom(this.dispatchApi.getSuggestions(booking.id));
+      this.nearbyDoctors.set(result.doctors);
+      this.clientArea.set(result.clientArea);
+    } catch {
+      this.nearbyDoctors.set([]);
+      this.clientArea.set(booking.area ?? bookingGeo(booking).area);
+    }
+  }
+
+  private async refreshAfterBookingUpdate(updated: Booking): Promise<void> {
+    const queue = await firstValueFrom(this.dispatchApi.getQueue());
+    const sorted = sortBookingsByPriority(queue);
+    this.queue.set(sorted);
+    this.selected.set(updated.status === 'accepted' ? updated : sorted.find((b) => b.id === updated.id) ?? updated);
+    if (updated.status !== 'accepted') {
+      await this.loadSuggestions(updated);
+    }
+    this.doctorsList.set(await firstValueFrom(this.doctorApi.list()));
+  }
+
+  private async runAction(action: () => Promise<void>): Promise<void> {
+    this.actionLoading.set(true);
+    try {
+      await action();
+    } catch {
+      this.loadError.set('Action failed. Please try again.');
+    } finally {
+      this.actionLoading.set(false);
+    }
   }
 }

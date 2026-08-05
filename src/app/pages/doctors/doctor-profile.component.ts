@@ -1,28 +1,15 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { Booking, BookingType } from '../../models/booking.model';
+import { DoctorProfilePeriod, Doctor, DoctorStatus } from '../../models/doctor.model';
 import {
-  acceptBookingForDoctor,
-  Booking,
-  BookingType,
-  Doctor,
-  DoctorProfilePeriod,
-  DoctorStatus,
   formatDoctorVisitLabel,
   formatSubmittedLabel,
-  getDoctorAllHistory,
-  getDoctorById,
-  getDoctorCompletedTasks,
-  getDoctorIncomingRequests,
-  getDoctorPendingTasks,
-  getDoctorPeriodBookings,
-  getDoctorPeriodStats,
-  getDoctorTotalPatients,
   getStatusLabel,
-  rejectBookingForDoctor,
-  setDoctorAvailability,
-} from '../../data/mock-data';
-import { AppointmentService } from '../../services/appointment.service';
+} from '../../utils/booking.utils';
+import { DoctorApiService, DoctorStats } from '../../services/doctor-api.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { DOCTOR_AVAILABILITY_OPTIONS } from '../../components/picker/appointment-picker-options';
 import { VosSelectComponent } from '../../components/picker/vos-select.component';
@@ -426,12 +413,22 @@ type DoctorProfileTab = 'dashboard' | 'requests' | 'appointments' | 'history';
 export class DoctorProfileComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly appointmentService = inject(AppointmentService);
+  private readonly doctorApi = inject(DoctorApiService);
 
   private readonly doctorId = signal<string | null>(null);
-  private readonly refresh = signal(0);
   readonly activeTab = signal<DoctorProfileTab>('dashboard');
   readonly selectedPeriod = signal<DoctorProfilePeriod>('today');
+
+  readonly doctor = signal<Doctor | undefined>(undefined);
+  readonly incomingRequests = signal<Booking[]>([]);
+  readonly periodStats = signal<DoctorStats>({ total: 0, pending: 0, completed: 0, active: 0, patients: 0 });
+  readonly weekAppointments = signal(0);
+  readonly periodBookings = signal<Booking[]>([]);
+  readonly visitHistory = signal<Booking[]>([]);
+
+  readonly pendingTasks = computed(() => this.periodBookings().filter((b) => b.status === 'accepted'));
+  readonly completedTasks = computed(() => this.periodBookings().filter((b) => b.status === 'completed'));
+  readonly periodAppointments = computed(() => this.periodBookings());
 
   readonly periods: { key: DoctorProfilePeriod; label: string }[] = [
     { key: 'today', label: 'Today' },
@@ -444,87 +441,16 @@ export class DoctorProfileComponent {
   readonly formatSubmittedLabel = formatSubmittedLabel;
   readonly formatDoctorVisitLabel = formatDoctorVisitLabel;
 
-  readonly doctor = computed(() => {
-    this.refresh();
-    const id = this.doctorId();
-    if (!id) return undefined;
-    return getDoctorById(id);
-  });
-
-  readonly incomingRequests = computed(() => {
-    this.appointmentService.bookingsVersion();
-    this.refresh();
-    const d = this.doctor();
-    if (!d) return [];
-    return getDoctorIncomingRequests(d);
-  });
-
-  readonly periodStats = computed(() => {
-    this.appointmentService.bookingsVersion();
-    this.refresh();
-    const d = this.doctor();
-    if (!d) return { total: 0, pending: 0, completed: 0, active: 0, patients: 0 };
-    return getDoctorPeriodStats(d, this.selectedPeriod());
-  });
-
-  readonly weekAppointments = computed(() => {
-    this.appointmentService.bookingsVersion();
-    this.refresh();
-    const d = this.doctor();
-    if (!d) return 0;
-    return getDoctorPeriodStats(d, 'weekly').total;
-  });
-
-  readonly pendingTasks = computed(() => {
-    this.appointmentService.bookingsVersion();
-    this.refresh();
-    const d = this.doctor();
-    if (!d) return [];
-    return getDoctorPendingTasks(d, this.selectedPeriod());
-  });
-
-  readonly completedTasks = computed(() => {
-    this.appointmentService.bookingsVersion();
-    this.refresh();
-    const d = this.doctor();
-    if (!d) return [];
-    return getDoctorCompletedTasks(d, this.selectedPeriod());
-  });
-
-  readonly periodAppointments = computed(() => {
-    this.appointmentService.bookingsVersion();
-    this.refresh();
-    const d = this.doctor();
-    if (!d) return [];
-    return getDoctorPeriodBookings(d, this.selectedPeriod());
-  });
-
-  readonly totalPatients = computed(() => {
-    this.appointmentService.bookingsVersion();
-    this.refresh();
-    const d = this.doctor();
-    if (!d) return 0;
-    return getDoctorTotalPatients(d);
-  });
-
-  readonly visitHistory = computed(() => {
-    this.appointmentService.bookingsVersion();
-    this.refresh();
-    const d = this.doctor();
-    if (!d) return [];
-    return getDoctorAllHistory(d);
-  });
-
   readonly availabilityOptions = DOCTOR_AVAILABILITY_OPTIONS;
 
-  readonly availabilityValue = computed(() => {
-    const d = this.doctor();
-    return d?.status ?? 'offline';
-  });
+  readonly availabilityValue = computed(() => this.doctor()?.status ?? 'offline');
 
   constructor() {
     this.route.paramMap.subscribe((params) => {
-      this.doctorId.set(params.get('id'));
+      const id = params.get('id');
+      this.doctorId.set(id);
+      if (id) void this.loadDoctor(id);
+      else this.doctor.set(undefined);
     });
     this.route.queryParamMap.subscribe((params) => {
       const tab = params.get('tab');
@@ -532,6 +458,72 @@ export class DoctorProfileComponent {
         this.activeTab.set(tab);
       }
     });
+
+    effect(() => {
+      const id = this.doctorId();
+      const period = this.selectedPeriod();
+      if (id && this.doctor()) void this.loadPeriodData(id, period);
+    });
+  }
+
+  private async loadDoctor(id: string): Promise<void> {
+    try {
+      const d = await firstValueFrom(this.doctorApi.getById(id));
+      this.doctor.set(d);
+      await Promise.all([this.loadRequests(id), this.loadVisitHistory(id), this.loadWeekStats(id)]);
+    } catch {
+      this.doctor.set(undefined);
+    }
+  }
+
+  private async loadPeriodData(id: string, period: DoctorProfilePeriod): Promise<void> {
+    try {
+      const [stats, bookings] = await Promise.all([
+        firstValueFrom(this.doctorApi.getStats(id, period)),
+        firstValueFrom(this.doctorApi.getBookings(id, period)),
+      ]);
+      this.periodStats.set(stats);
+      this.periodBookings.set(bookings);
+    } catch {
+      this.periodStats.set({ total: 0, pending: 0, completed: 0, active: 0, patients: 0 });
+      this.periodBookings.set([]);
+    }
+  }
+
+  private async loadWeekStats(id: string): Promise<void> {
+    try {
+      const stats = await firstValueFrom(this.doctorApi.getStats(id, 'weekly'));
+      this.weekAppointments.set(stats.total);
+    } catch {
+      this.weekAppointments.set(0);
+    }
+  }
+
+  private async loadRequests(id: string): Promise<void> {
+    try {
+      this.incomingRequests.set(await firstValueFrom(this.doctorApi.getRequests(id)));
+    } catch {
+      this.incomingRequests.set([]);
+    }
+  }
+
+  private async loadVisitHistory(id: string): Promise<void> {
+    try {
+      this.visitHistory.set(await firstValueFrom(this.doctorApi.getBookings(id)));
+    } catch {
+      this.visitHistory.set([]);
+    }
+  }
+
+  private async refreshDoctorData(): Promise<void> {
+    const id = this.doctorId();
+    if (!id) return;
+    await Promise.all([
+      this.loadDoctor(id),
+      this.loadPeriodData(id, this.selectedPeriod()),
+      this.loadRequests(id),
+      this.loadVisitHistory(id),
+    ]);
   }
 
   setTab(tab: DoctorProfileTab): void {
@@ -574,34 +566,42 @@ export class DoctorProfileComponent {
 
   onAvailabilityChange(value: string): void {
     const d = this.doctor();
-    if (!d) return;
-    const status = value as DoctorStatus;
-    if (status === 'offline') {
-      setDoctorAvailability(d, false);
-    } else if (status === 'available') {
-      setDoctorAvailability(d, true);
-    } else {
-      d.status = 'on-visit';
+    const id = this.doctorId();
+    if (!d || !id) return;
+    void this.updateAvailability(id, value as DoctorStatus);
+  }
+
+  private async updateAvailability(id: string, status: DoctorStatus): Promise<void> {
+    try {
+      const updated = await firstValueFrom(this.doctorApi.setAvailability(id, status));
+      this.doctor.set(updated);
+    } catch {
+      /* keep current selection on failure */
     }
-    this.bump();
   }
 
   acceptRequest(booking: Booking): void {
-    const d = this.doctor();
-    if (!d) return;
-    acceptBookingForDoctor(booking, d);
-    this.bump();
+    const id = this.doctorId();
+    if (!id) return;
+    void this.respondToRequest(booking.id, id, 'accept');
   }
 
   rejectRequest(booking: Booking): void {
-    const d = this.doctor();
-    if (!d) return;
-    rejectBookingForDoctor(booking, d);
-    this.bump();
+    const id = this.doctorId();
+    if (!id) return;
+    void this.respondToRequest(booking.id, id, 'decline');
   }
 
-  private bump(): void {
-    this.refresh.update((v) => v + 1);
-    this.appointmentService.bookingsVersion.update((v) => v + 1);
+  private async respondToRequest(bookingId: string, doctorId: string, action: 'accept' | 'decline'): Promise<void> {
+    try {
+      if (action === 'accept') {
+        await firstValueFrom(this.doctorApi.acceptRequest(bookingId, doctorId));
+      } else {
+        await firstValueFrom(this.doctorApi.declineRequest(bookingId, doctorId));
+      }
+      await this.refreshDoctorData();
+    } catch {
+      /* request may already be handled */
+    }
   }
 }

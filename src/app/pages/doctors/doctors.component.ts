@@ -1,16 +1,16 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import {
-  DOCTORS,
   DOCTOR_SPECIALTIES,
   Doctor,
   DoctorForm,
   DoctorStatus,
-  createDoctorFromForm,
   createEmptyDoctorForm,
-  getDoctorStatusLabel,
-} from '../../data/mock-data';
+} from '../../models/doctor.model';
+import { getDoctorStatusLabel } from '../../utils/doctor.utils';
+import { DoctorApiService } from '../../services/doctor-api.service';
 import { IconComponent } from '../../components/icon/icon.component';
 import { DOCTOR_STATUS_OPTIONS } from '../../components/picker/appointment-picker-options';
 import { toPickerOptions } from '../../components/picker/picker.utils';
@@ -45,6 +45,12 @@ type DoctorFilter = 'all' | DoctorStatus;
           </button>
         }
       </div>
+
+      @if (loadError()) {
+        <p class="doctors-page__error">{{ loadError() }}</p>
+      } @else if (loading()) {
+        <p class="doctors-page__loading">Loading doctors…</p>
+      }
 
       <div class="doctors-grid doctors-page__grid">
         @for (d of filteredDoctors(); track d.id) {
@@ -177,8 +183,9 @@ type DoctorFilter = 'all' | DoctorStatus;
     }
   `,
 })
-export class DoctorsComponent {
+export class DoctorsComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly doctorApi = inject(DoctorApiService);
 
   readonly filters: { key: DoctorFilter; label: string }[] = [
     { key: 'all', label: 'All' },
@@ -191,7 +198,9 @@ export class DoctorsComponent {
   readonly specialtyOptions = toPickerOptions([...DOCTOR_SPECIALTIES], 'Select specialty');
   readonly doctorStatusOptions = DOCTOR_STATUS_OPTIONS;
   readonly activeFilter = signal<DoctorFilter>('all');
-  readonly doctorsList = signal<Doctor[]>([...DOCTORS]);
+  readonly doctorsList = signal<Doctor[]>([]);
+  readonly loading = signal(true);
+  readonly loadError = signal('');
   readonly addDoctorOpen = signal(false);
   readonly formError = signal('');
   doctorForm: DoctorForm = createEmptyDoctorForm();
@@ -203,6 +212,23 @@ export class DoctorsComponent {
     if (filter === 'all') return list;
     return list.filter((d) => d.status === filter);
   });
+
+  ngOnInit(): void {
+    void this.loadDoctors();
+  }
+
+  async loadDoctors(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set('');
+    try {
+      this.doctorsList.set(await firstValueFrom(this.doctorApi.list()));
+    } catch {
+      this.loadError.set('Could not load doctors from the server.');
+      this.doctorsList.set([]);
+    } finally {
+      this.loading.set(false);
+    }
+  }
 
   openProfile(d: Doctor): void {
     void this.router.navigate(['/doctors', d.id]);
@@ -236,11 +262,19 @@ export class DoctorsComponent {
       return;
     }
 
-    const doctor = createDoctorFromForm({ ...this.doctorForm });
-    this.doctorsList.set([...DOCTORS]);
-    this.activeFilter.set('all');
-    this.formError.set('');
-    this.addDoctorOpen.set(false);
-    void this.router.navigate(['/doctors', doctor.id]);
+    void this.createDoctor();
+  }
+
+  private async createDoctor(): Promise<void> {
+    try {
+      const doctor = await firstValueFrom(this.doctorApi.create({ ...this.doctorForm }));
+      await this.loadDoctors();
+      this.activeFilter.set('all');
+      this.formError.set('');
+      this.addDoctorOpen.set(false);
+      void this.router.navigate(['/doctors', doctor.id]);
+    } catch {
+      this.formError.set('Could not save doctor. Please try again.');
+    }
   }
 }

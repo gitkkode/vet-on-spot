@@ -1,17 +1,27 @@
-import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
+import { Booking, BookingType } from '../../models/booking.model';
 import {
-  BOOKINGS,
-  Booking,
-  BookingType,
   formatDoctorVisitLabel,
   formatSubmittedLabel,
+  getBookingSubmittedAt,
+  getPaymentStatusClass,
+  getPaymentStatusLabel,
   getStatusLabel,
-  sortBookingsByPriority,
-} from '../../data/mock-data';
+} from '../../utils/booking.utils';
 import { AppointmentService } from '../../services/appointment.service';
+import { BookingApiService } from '../../services/booking-api.service';
 import { IconComponent } from '../../components/icon/icon.component';
+
+function sortBookingsForDisplay(list: Booking[]): Booking[] {
+  return [...list].sort((a, b) => {
+    if (a.isEmergency && !b.isEmergency) return -1;
+    if (!a.isEmergency && b.isEmergency) return 1;
+    return getBookingSubmittedAt(b).localeCompare(getBookingSubmittedAt(a));
+  });
+}
 
 type StatusFilter = 'all' | 'pending' | 'accepted' | 'completed' | 'cancelled';
 type TypeFilter = 'all' | BookingType;
@@ -81,6 +91,7 @@ type TypeFilter = 'all' | BookingType;
                   <th>Doctor Visit</th>
                   <th>Type</th>
                   <th>Status</th>
+                  <th>Payment</th>
                   <th>Doctor</th>
                   <th class="bookings-table__actions-col">Actions</th>
                 </tr>
@@ -114,6 +125,11 @@ type TypeFilter = 'all' | BookingType;
                       <span class="status-pill status-pill--{{ b.status }}">{{ statusLabel(b.status) }}</span>
                     </td>
                     <td>
+                      <span class="status-pill status-pill--{{ paymentStatusClass(b.paymentStatus) }}">
+                        {{ paymentStatusLabel(b.paymentStatus) }}
+                      </span>
+                    </td>
+                    <td>
                       @if (b.assignedDoctor) {
                         <span class="bookings-table__doctor">{{ b.assignedDoctor }}</span>
                       } @else {
@@ -128,7 +144,7 @@ type TypeFilter = 'all' | BookingType;
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="8" class="bookings-table__empty">No bookings match your search</td>
+                    <td colspan="9" class="bookings-table__empty">No bookings match your search</td>
                   </tr>
                 }
               </tbody>
@@ -243,8 +259,13 @@ type TypeFilter = 'all' | BookingType;
 })
 export class BookingsComponent implements OnInit {
   private readonly appointmentService = inject(AppointmentService);
+  private readonly bookingApi = inject(BookingApiService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+
+  readonly allBookings = signal<Booking[]>([]);
+  readonly loading = signal(true);
+  readonly loadError = signal('');
 
   readonly typeTabs: { value: TypeFilter; label: string }[] = [
     { value: 'all', label: 'All Visits' },
@@ -261,14 +282,15 @@ export class BookingsComponent implements OnInit {
   readonly selectedBooking = signal<Booking | null>(null);
 
   readonly statusLabel = getStatusLabel;
+  readonly paymentStatusLabel = getPaymentStatusLabel;
+  readonly paymentStatusClass = getPaymentStatusClass;
   readonly formatSubmittedLabel = formatSubmittedLabel;
   readonly formatDoctorVisitLabel = formatDoctorVisitLabel;
 
   readonly statusChips = computed(() => {
-    this.appointmentService.bookingsVersion();
     const type = this.typeFilter();
     const q = this.searchQuery().trim().toLowerCase();
-    let list = [...BOOKINGS];
+    let list = [...this.allBookings()];
     if (type !== 'all') list = list.filter((b) => b.type === type);
     if (q) {
       list = list.filter(
@@ -287,19 +309,19 @@ export class BookingsComponent implements OnInit {
       { value: 'pending' as StatusFilter, label: 'Pending', count: count('pending') },
       { value: 'accepted' as StatusFilter, label: 'Accepted', count: count('accepted') },
       { value: 'completed' as StatusFilter, label: 'Completed', count: count('completed') },
+      { value: 'cancelled' as StatusFilter, label: 'Cancelled', count: count('cancelled') },
     ];
   });
 
   readonly filteredBookings = computed(() => {
-    this.appointmentService.bookingsVersion();
     const status = this.statusFilter();
     const type = this.typeFilter();
     const q = this.searchQuery().trim().toLowerCase();
 
-    let list = [...BOOKINGS];
+    let list = [...this.allBookings()];
     if (status !== 'all') list = list.filter((b) => b.status === status);
     if (type !== 'all') list = list.filter((b) => b.type === type);
-    list = sortBookingsByPriority(list);
+    list = sortBookingsForDisplay(list);
     if (!q) return list;
 
     return list.filter(
@@ -331,7 +353,15 @@ export class BookingsComponent implements OnInit {
     return `${start} – ${end} of ${total}`;
   });
 
+  constructor() {
+    effect(() => {
+      const version = this.appointmentService.bookingsVersion();
+      if (version > 0) void this.loadBookings();
+    });
+  }
+
   ngOnInit(): void {
+    void this.loadBookings();
     this.route.queryParamMap.subscribe((params) => {
       const status = params.get('status') as StatusFilter | null;
       if (status && ['all', 'pending', 'accepted', 'completed', 'cancelled'].includes(status)) {
@@ -342,6 +372,20 @@ export class BookingsComponent implements OnInit {
         this.typeFilter.set(type);
       }
     });
+  }
+
+  async loadBookings(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set('');
+    try {
+      const list = await firstValueFrom(this.bookingApi.list({ limit: 100 }));
+      this.allBookings.set(list);
+    } catch {
+      this.loadError.set('Could not load bookings from the server.');
+      this.allBookings.set([]);
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   @HostListener('document:keydown.escape')

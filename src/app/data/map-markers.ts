@@ -1,8 +1,6 @@
-import {
-  Booking,
-  Doctor,
-  Vehicle,
-} from './mock-data';
+import { Booking } from '../models/booking.model';
+import { Doctor } from '../models/doctor.model';
+import { Vehicle } from '../models/vehicle.model';
 import {
   BANGALORE_AREAS,
   distanceKm,

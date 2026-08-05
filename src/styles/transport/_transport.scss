@@ -2,6 +2,43 @@
 @use '../mixins' as *;
 
 .transport-page {
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  &__add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: center;
+
+    app-icon,
+    .app-icon {
+      display: block;
+      flex-shrink: 0;
+    }
+  }
+
+  &__error {
+    color: $danger;
+    margin-bottom: 16px;
+  }
+
+  &__loading {
+    color: $text-secondary;
+    margin-bottom: 16px;
+  }
+
   .transport-stats {
     margin-bottom: 24px;
 

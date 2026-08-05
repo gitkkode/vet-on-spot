@@ -3,24 +3,26 @@ import { isPlatformBrowser } from '@angular/common';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = async () => {
   const platformId = inject(PLATFORM_ID);
   if (!isPlatformBrowser(platformId)) {
     return true;
   }
   const auth = inject(AuthService);
   const router = inject(Router);
+  await auth.waitUntilReady();
   if (auth.isLoggedIn()) return true;
   return router.createUrlTree(['/login']);
 };
 
-export const guestGuard: CanActivateFn = () => {
+export const guestGuard: CanActivateFn = async () => {
   const platformId = inject(PLATFORM_ID);
   if (!isPlatformBrowser(platformId)) {
     return true;
   }
   const auth = inject(AuthService);
   const router = inject(Router);
+  await auth.waitUntilReady();
   if (!auth.isLoggedIn()) return true;
   return router.createUrlTree(['/dashboard']);
 };

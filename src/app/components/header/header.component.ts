@@ -1,5 +1,6 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { AppointmentService } from '../../services/appointment.service';
+import { AuthService } from '../../services/auth.service';
 import { IconComponent } from '../icon/icon.component';
 
 @Component({
@@ -24,9 +25,9 @@ import { IconComponent } from '../icon/icon.component';
           <span class="badge-dot"></span>
         </button>
         <div class="top-header__user">
-          <div class="top-header__user-avatar">AD</div>
+          <div class="top-header__user-avatar">{{ initials() }}</div>
           <div class="top-header__user-info">
-            <strong>Admin User</strong>
+            <strong>{{ displayName() }}</strong>
             <span>{{ subtitle() }}</span>
           </div>
         </div>
@@ -36,7 +37,10 @@ import { IconComponent } from '../icon/icon.component';
 })
 export class HeaderComponent {
   private readonly appointmentService = inject(AppointmentService);
+  private readonly auth = inject(AuthService);
   readonly subtitle = input('Office Manager');
+  readonly displayName = computed(() => this.auth.displayName());
+  readonly initials = computed(() => this.auth.profileInitials());
 
   openAddAppointment(): void {
     this.appointmentService.startQuickCreate('dashboard');

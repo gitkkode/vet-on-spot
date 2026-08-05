@@ -115,6 +115,37 @@
     }
   }
 
+  .password-field {
+    position: relative;
+
+    input {
+      padding-right: 44px;
+    }
+
+    &__toggle {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: $text-secondary;
+      cursor: pointer;
+
+      &:hover {
+        color: $appt-primary-600;
+        background: rgba(255, 255, 255, 0.45);
+      }
+    }
+  }
+
   .remember-row {
     display: flex;
     align-items: center;

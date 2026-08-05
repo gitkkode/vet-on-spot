@@ -1,8 +1,10 @@
 import { Directive, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { AppointmentService } from '../../services/appointment.service';
+import { DoctorApiService } from '../../services/doctor-api.service';
 import { IconName } from '../../components/icon/icon.types';
-import { BOOKINGS, DOCTORS } from '../../data/mock-data';
+import { Doctor } from '../../models/doctor.model';
 import {
   APPETITE_OPTIONS,
   breedOptions,
@@ -15,7 +17,6 @@ import {
   YES_NO_OPTIONS,
 } from '../../components/picker/appointment-picker-options';
 import {
-  bookingToForm,
   CAT_BREEDS,
   CHRONIC_DISEASE_OPTIONS,
   BookingMode,
@@ -39,8 +40,9 @@ export interface TypeOption {
 export abstract class AppointmentFormBase implements OnInit {
   readonly appointmentService = inject(AppointmentService);
   protected readonly route = inject(ActivatedRoute);
+  private readonly doctorApi = inject(DoctorApiService);
 
-  readonly doctors = DOCTORS;
+  doctors: Doctor[] = [];
   readonly chronicOptions = CHRONIC_DISEASE_OPTIONS;
   readonly dogBreeds = DOG_BREEDS;
   readonly catBreeds = CAT_BREEDS;
@@ -105,22 +107,27 @@ export abstract class AppointmentFormBase implements OnInit {
   }
 
   ngOnInit(): void {
+    void this.loadDoctors();
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      const booking = BOOKINGS.find((b) => b.id === id);
-      if (booking) {
-        this.appointmentService.editingBookingId.set(booking.id);
-        this.appointmentService.form.set(bookingToForm(booking));
-      }
+      void this.appointmentService.loadBookingForEdit(id);
+    }
+  }
+
+  private async loadDoctors(): Promise<void> {
+    try {
+      this.doctors = await firstValueFrom(this.doctorApi.list());
+    } catch {
+      this.doctors = [];
     }
   }
 
   save(): void {
-    this.appointmentService.saveBooking();
+    void this.appointmentService.saveBooking();
   }
 
   submit(): void {
-    this.appointmentService.finalizeBooking();
+    void this.appointmentService.finalizeBooking();
   }
 
   selectBookingMode(mode: BookingMode): void {
@@ -248,20 +255,56 @@ export abstract class AppointmentFormBase implements OnInit {
   }
 
   onProblemMedia(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const names = input.files ? Array.from(input.files).map((f) => f.name) : [];
-    this.patchHealth('problemMediaFiles', names);
+    void this.handleProblemMedia(event);
   }
 
   onVaccinationFiles(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const names = input.files ? Array.from(input.files).map((f) => f.name) : [];
-    this.patchVaccination('vaccinationCardFiles', names);
+    void this.handleVaccinationFiles(event);
   }
 
   onDocumentFiles(key: keyof PetAppointmentForm['documents'], event: Event): void {
+    void this.handleDocumentFiles(key, event);
+  }
+
+  private async handleProblemMedia(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
-    const names = input.files ? Array.from(input.files).map((f) => f.name) : [];
-    this.appointmentService.form.update((form) => ({ ...form, documents: { ...form.documents, [key]: names } }));
+    const files = input.files ? Array.from(input.files) : [];
+    if (!files.length) return;
+    const hadBooking = !!this.appointmentService.editingBookingId();
+    const added = await this.appointmentService.uploadFormFiles('problemMedia', files);
+    if (!hadBooking) {
+      this.patchHealth('problemMediaFiles', [...this.f.health.problemMediaFiles, ...added]);
+    }
+    input.value = '';
+  }
+
+  private async handleVaccinationFiles(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = input.files ? Array.from(input.files) : [];
+    if (!files.length) return;
+    const hadBooking = !!this.appointmentService.editingBookingId();
+    const added = await this.appointmentService.uploadFormFiles('vaccinationCard', files);
+    if (!hadBooking) {
+      this.patchVaccination('vaccinationCardFiles', [...this.f.vaccination.vaccinationCardFiles, ...added]);
+    }
+    input.value = '';
+  }
+
+  private async handleDocumentFiles(
+    key: keyof PetAppointmentForm['documents'],
+    event: Event,
+  ): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const files = input.files ? Array.from(input.files) : [];
+    if (!files.length) return;
+    const hadBooking = !!this.appointmentService.editingBookingId();
+    const added = await this.appointmentService.uploadFormFiles(`documents.${key}`, files);
+    if (!hadBooking) {
+      this.appointmentService.form.update((form) => ({
+        ...form,
+        documents: { ...form.documents, [key]: [...form.documents[key], ...added] },
+      }));
+    }
+    input.value = '';
   }
 }

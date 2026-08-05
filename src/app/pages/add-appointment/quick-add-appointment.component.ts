@@ -225,10 +225,15 @@ export class QuickAddAppointmentComponent extends AppointmentFormBase {
 
   submitIntake(): void {
     if (!this.canConfirm()) return;
-    this.appointmentService.saveBooking();
-    const id = this.appointmentService.editingBookingId() ?? `VET-${Date.now().toString().slice(-6)}`;
-    this.refId.set(id);
-    this.submitted.set(true);
+    void this.saveIntake();
+  }
+
+  private async saveIntake(): Promise<void> {
+    const booking = await this.appointmentService.saveBooking();
+    if (booking) {
+      this.refId.set(booking.id);
+      this.submitted.set(true);
+    }
   }
 
   submitAnother(): void {
@@ -240,7 +245,7 @@ export class QuickAddAppointmentComponent extends AppointmentFormBase {
   }
 
   finish(): void {
-    this.appointmentService.finalizeBooking();
+    void this.appointmentService.finalizeBooking();
   }
 
   private emergencyFlagLabel(): string {

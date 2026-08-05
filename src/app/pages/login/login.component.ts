@@ -27,13 +27,32 @@ import { IconComponent } from '../../components/icon/icon.component';
           </div>
           <div class="form-group">
             <label for="password">Password</label>
-            <input id="password" type="password" [(ngModel)]="password" name="password" placeholder="••••••••" required />
+            <div class="password-field">
+              <input
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                [(ngModel)]="password"
+                name="password"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                class="password-field__toggle"
+                (click)="togglePasswordVisibility()"
+                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+              >
+                <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="sm" />
+              </button>
+            </div>
           </div>
           <label class="remember-row">
             <input type="checkbox" [(ngModel)]="remember" name="remember" />
             Remember me
           </label>
-          <button type="submit" class="btn-primary">Sign In</button>
+          <button type="submit" class="btn-primary" [disabled]="loading()">
+            {{ loading() ? 'Signing in…' : 'Sign In' }}
+          </button>
           <a href="#" class="forgot-link" (click)="$event.preventDefault()">Forgot password?</a>
         </form>
       </div>
@@ -41,21 +60,32 @@ import { IconComponent } from '../../components/icon/icon.component';
   `,
 })
 export class LoginComponent {
-  email = 'admin@vetonspot.com';
-  password = 'admin123';
+  email = '';
+  password = '';
   remember = true;
   readonly error = signal('');
+  readonly loading = signal(false);
+  readonly showPassword = signal(false);
 
   constructor(
     private readonly auth: AuthService,
     private readonly router: Router,
   ) {}
 
-  onSubmit(): void {
-    if (this.auth.login(this.email, this.password)) {
-      this.router.navigate(['/dashboard']);
-    } else {
-      this.error.set('Invalid email or password. Use any email and password (4+ chars).');
+  togglePasswordVisibility(): void {
+    this.showPassword.update((visible) => !visible);
+  }
+
+  async onSubmit(): Promise<void> {
+    this.error.set('');
+    this.loading.set(true);
+    try {
+      await this.auth.login(this.email, this.password);
+      await this.router.navigate(['/dashboard']);
+    } catch {
+      this.error.set('Invalid email or password.');
+    } finally {
+      this.loading.set(false);
     }
   }
 }
