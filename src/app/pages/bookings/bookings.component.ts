@@ -2,7 +2,7 @@ import { Component, computed, effect, HostListener, inject, OnInit, signal } fro
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { Booking, BookingType } from '../../models/booking.model';
+import { Booking, BookingType, BOOKING_PAYMENT_STATUS_OPTIONS, BOOKING_STATUS_OPTIONS } from '../../models/booking.model';
 import {
   formatDoctorVisitLabel,
   formatSubmittedLabel,
@@ -14,6 +14,7 @@ import {
 import { AppointmentService } from '../../services/appointment.service';
 import { BookingApiService } from '../../services/booking-api.service';
 import { IconComponent } from '../../components/icon/icon.component';
+import { VosSelectComponent } from '../../components/picker/vos-select.component';
 
 function sortBookingsForDisplay(list: Booking[]): Booking[] {
   return [...list].sort((a, b) => {
@@ -28,7 +29,7 @@ type TypeFilter = 'all' | BookingType;
 
 @Component({
   selector: 'app-bookings',
-  imports: [FormsModule, IconComponent],
+  imports: [FormsModule, IconComponent, VosSelectComponent],
   template: `
     <div class="bookings-page" [class.bookings-page--drawer-open]="!!selectedBooking()">
       <div class="bookings-page__header">
@@ -214,6 +215,39 @@ type TypeFilter = 'all' | BookingType;
                   <span>{{ statusLabel(b.status) }}</span>
                 </div>
               </div>
+              <div class="bookings-drawer__status-controls">
+                <label class="bookings-drawer__field">
+                  <span>Change booking status</span>
+                  <app-vos-select
+                    [options]="bookingStatusOptions"
+                    panelTitle="Booking status"
+                    placeholder="Select status"
+                    [ngModel]="drawerStatusDraft()"
+                    (ngModelChange)="drawerStatusDraft.set($event)"
+                  />
+                </label>
+                <label class="bookings-drawer__field">
+                  <span>Change payment status</span>
+                  <app-vos-select
+                    [options]="paymentStatusOptions"
+                    panelTitle="Payment status"
+                    placeholder="Select payment status"
+                    [ngModel]="drawerPaymentStatusDraft()"
+                    (ngModelChange)="drawerPaymentStatusDraft.set($event)"
+                  />
+                </label>
+                @if (drawerStatusError()) {
+                  <div class="error-msg">{{ drawerStatusError() }}</div>
+                }
+                <button
+                  type="button"
+                  class="btn-outline bookings-drawer__status-btn"
+                  [disabled]="drawerStatusSaving()"
+                  (click)="saveDrawerStatus(b)"
+                >
+                  Update Status
+                </button>
+              </div>
               <div class="bookings-drawer__field">
                 <label>Reason</label>
                 <span>{{ b.reason || '—' }}</span>
@@ -280,6 +314,13 @@ export class BookingsComponent implements OnInit {
   readonly pageSize = signal(10);
   readonly currentPage = signal(0);
   readonly selectedBooking = signal<Booking | null>(null);
+  readonly drawerStatusDraft = signal<Booking['status']>('pending');
+  readonly drawerPaymentStatusDraft = signal<Booking['paymentStatus']>('unpaid');
+  readonly drawerStatusSaving = signal(false);
+  readonly drawerStatusError = signal('');
+
+  readonly bookingStatusOptions = BOOKING_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
+  readonly paymentStatusOptions = BOOKING_PAYMENT_STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }));
 
   readonly statusLabel = getStatusLabel;
   readonly paymentStatusLabel = getPaymentStatusLabel;
@@ -426,10 +467,40 @@ export class BookingsComponent implements OnInit {
 
   openBooking(b: Booking): void {
     this.selectedBooking.set(b);
+    this.drawerStatusDraft.set(b.status);
+    this.drawerPaymentStatusDraft.set(b.paymentStatus || 'unpaid');
+    this.drawerStatusError.set('');
   }
 
   closeDrawer(): void {
     this.selectedBooking.set(null);
+    this.drawerStatusError.set('');
+  }
+
+  async saveDrawerStatus(b: Booking): Promise<void> {
+    this.drawerStatusSaving.set(true);
+    this.drawerStatusError.set('');
+    try {
+      let updated = b;
+      if (this.drawerStatusDraft() !== b.status) {
+        updated = await firstValueFrom(this.bookingApi.setStatus(b.id, this.drawerStatusDraft()));
+      }
+      const currentPayment = updated.paymentStatus || 'unpaid';
+      if (this.drawerPaymentStatusDraft() !== currentPayment) {
+        updated = await firstValueFrom(
+          this.bookingApi.setPaymentStatus(updated.id, this.drawerPaymentStatusDraft()),
+        );
+      }
+
+      this.selectedBooking.set(updated);
+      this.allBookings.update((list) => list.map((item) => (item.id === updated.id ? updated : item)));
+      this.appointmentService.bookingsVersion.update((v) => v + 1);
+    } catch (error) {
+      const err = error as Error;
+      this.drawerStatusError.set(err.message || 'Could not update status.');
+    } finally {
+      this.drawerStatusSaving.set(false);
+    }
   }
 
   editBooking(b: Booking): void {

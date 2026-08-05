@@ -5,6 +5,22 @@ export type BookingStatus = 'pending' | 'sent' | 'accepted' | 'completed' | 'can
 export type BookingType = 'online' | 'home' | 'clinic';
 export type BookingPaymentStatus = 'unpaid' | 'paid' | 'partial' | 'waived' | 'refunded';
 
+export const BOOKING_STATUS_OPTIONS: { value: BookingStatus; label: string }[] = [
+  { value: 'pending', label: 'Pending' },
+  { value: 'sent', label: 'Sent' },
+  { value: 'accepted', label: 'Accepted' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+];
+
+export const BOOKING_PAYMENT_STATUS_OPTIONS: { value: BookingPaymentStatus; label: string }[] = [
+  { value: 'unpaid', label: 'Unpaid' },
+  { value: 'paid', label: 'Paid' },
+  { value: 'partial', label: 'Partial' },
+  { value: 'waived', label: 'Waived' },
+  { value: 'refunded', label: 'Refunded' },
+];
+
 export interface BookingHistoryEntry {
   time: string;
   label: string;

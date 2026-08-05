@@ -15,13 +15,13 @@ export interface Vehicle {
 
 export interface VehicleForm {
   driver: string;
-  status: VehicleStatus;
+  status: VehicleStatus | '';
   area: string;
   lat?: number;
   lng?: number;
-  ridesToday: number;
-  kmToday: number;
-  fuelPercent: number;
+  ridesToday: number | null;
+  kmToday: number | null;
+  fuelPercent: number | null;
 }
 
 export const VEHICLE_STATUS_OPTIONS: { value: VehicleStatus; label: string }[] = [
@@ -34,11 +34,11 @@ export const VEHICLE_STATUS_OPTIONS: { value: VehicleStatus; label: string }[] =
 export function createEmptyVehicleForm(): VehicleForm {
   return {
     driver: '',
-    status: 'available',
+    status: '',
     area: '',
-    ridesToday: 0,
-    kmToday: 0,
-    fuelPercent: 100,
+    ridesToday: null,
+    kmToday: null,
+    fuelPercent: null,
   };
 }
 

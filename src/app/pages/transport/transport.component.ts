@@ -100,9 +100,15 @@ type VehicleFilter = 'all' | VehicleStatus;
                   <td>{{ v.assignedDoctor ?? '—' }}</td>
                   <td>{{ v.area ?? '—' }}</td>
                   <td>
-                    <span class="status-pill status-pill--{{ vehicleStatusClass(v.status) }}">
-                      {{ vehicleStatusLabel(v.status) }}
-                    </span>
+                    <div class="transport-page__status-cell" (click)="$event.stopPropagation()">
+                      <app-vos-select
+                        [options]="statusOptions"
+                        panelTitle="Status"
+                        placeholder="Select status"
+                        [ngModel]="v.status"
+                        (ngModelChange)="updateVehicleStatus(v, $event)"
+                      />
+                    </div>
                   </td>
                   <td>{{ v.ridesToday }}</td>
                   <td>{{ v.kmToday }} km</td>
@@ -321,6 +327,22 @@ export class TransportComponent implements OnInit {
       this.formError.set(err.message || 'Could not save vehicle.');
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  updateVehicleStatus(vehicle: Vehicle, status: VehicleStatus): void {
+    if (!status || status === vehicle.status) return;
+    void this.saveVehicleStatus(vehicle.id, status);
+  }
+
+  private async saveVehicleStatus(id: string, status: VehicleStatus): Promise<void> {
+    try {
+      const updated = await firstValueFrom(this.vehicleApi.setStatus(id, status));
+      this.vehicles.update((list) => list.map((v) => (v.id === id ? updated : v)));
+      const summary = await firstValueFrom(this.vehicleApi.getSummary());
+      this.summary.set(summary);
+    } catch {
+      await this.load();
     }
   }
 

@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { Booking, PetMedicationRecord } from '../../models/booking.model';
+import { Booking, PetMedicationRecord, BOOKING_PAYMENT_STATUS_OPTIONS, BOOKING_STATUS_OPTIONS } from '../../models/booking.model';
 import {
   formatFileLabel,
   getAcceptanceLabel,
@@ -72,6 +72,7 @@ import { getFilledFormDetails, bookingToForm } from '../../models/appointment-fo
             </div>
           </div>
           <div class="booking-detail-page__actions">
+            <button type="button" class="btn-outline" (click)="openStatusModal()">Change Status</button>
             <button type="button" class="btn-outline" (click)="editBooking(b)">Edit Appointment</button>
             @if (canRecordPayment(b)) {
               <button type="button" class="btn-outline" (click)="openPaymentModal()">Record Payment</button>
@@ -304,6 +305,44 @@ import { getFilledFormDetails, bookingToForm } from '../../models/appointment-fo
         </div>
       }
 
+      @if (statusModalOpen()) {
+        <div class="booking-detail-page__modal-backdrop" (click)="closeStatusModal()">
+          <div class="card booking-detail-page__modal" (click)="$event.stopPropagation()">
+            <h3>Change Status</h3>
+            <p class="booking-detail-page__modal-hint">Update booking or payment status for this appointment.</p>
+            <label class="form-field">
+              <span>Booking status</span>
+              <select [(ngModel)]="statusDraft">
+                @for (opt of bookingStatusOptions; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="form-field">
+              <span>Payment status</span>
+              <select [(ngModel)]="paymentStatusDraft">
+                @for (opt of paymentStatusOptions; track opt.value) {
+                  <option [value]="opt.value">{{ opt.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="form-field form-field--full">
+              <span>Note (optional)</span>
+              <input type="text" [(ngModel)]="statusNote" placeholder="Reason for change" />
+            </label>
+            @if (statusError()) {
+              <div class="error-msg">{{ statusError() }}</div>
+            }
+            <div class="booking-detail-page__modal-actions">
+              <button type="button" class="btn-outline" (click)="closeStatusModal()">Cancel</button>
+              <button type="button" class="btn-primary" [disabled]="statusSaving()" (click)="submitStatusChange()">
+                Save Status
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       @if (paymentModalOpen()) {
         <div class="booking-detail-page__modal-backdrop" (click)="closePaymentModal()">
           <div class="card booking-detail-page__modal" (click)="$event.stopPropagation()">
@@ -363,6 +402,9 @@ export class BookingDetailComponent {
     { value: 'other', label: 'Other' },
   ];
 
+  readonly bookingStatusOptions = BOOKING_STATUS_OPTIONS;
+  readonly paymentStatusOptions = BOOKING_PAYMENT_STATUS_OPTIONS;
+
   readonly booking = signal<Booking | undefined>(undefined);
   readonly allVisits = signal<Booking[]>([]);
   readonly previousVisits = signal<Booking[]>([]);
@@ -375,10 +417,16 @@ export class BookingDetailComponent {
   readonly paymentModalOpen = signal(false);
   readonly paymentSaving = signal(false);
   readonly paymentError = signal('');
+  readonly statusModalOpen = signal(false);
+  readonly statusSaving = signal(false);
+  readonly statusError = signal('');
 
   paymentAmount = 0;
   paymentMethod: PaymentMethod = 'cash';
   paymentReferenceNote = '';
+  statusDraft: Booking['status'] = 'pending';
+  paymentStatusDraft: Booking['paymentStatus'] = 'unpaid';
+  statusNote = '';
 
   readonly visitCount = computed(() => this.allVisits().length);
 
@@ -465,6 +513,51 @@ export class BookingDetailComponent {
     this.paymentReferenceNote = '';
     this.paymentError.set('');
     this.paymentModalOpen.set(true);
+  }
+
+  openStatusModal(): void {
+    const booking = this.booking();
+    if (!booking) return;
+    this.statusDraft = booking.status;
+    this.paymentStatusDraft = booking.paymentStatus || 'unpaid';
+    this.statusNote = '';
+    this.statusError.set('');
+    this.statusModalOpen.set(true);
+  }
+
+  closeStatusModal(): void {
+    if (this.statusSaving()) return;
+    this.statusModalOpen.set(false);
+  }
+
+  async submitStatusChange(): Promise<void> {
+    const booking = this.booking();
+    if (!booking) return;
+
+    this.statusSaving.set(true);
+    this.statusError.set('');
+    try {
+      let updated = booking;
+      const note = this.statusNote.trim() || undefined;
+
+      if (this.statusDraft !== booking.status) {
+        updated = await firstValueFrom(this.bookingApi.setStatus(booking.id, this.statusDraft, note));
+      }
+      if (this.paymentStatusDraft !== (updated.paymentStatus || 'unpaid')) {
+        updated = await firstValueFrom(
+          this.bookingApi.setPaymentStatus(updated.id, this.paymentStatusDraft, note),
+        );
+      }
+
+      this.booking.set(updated);
+      this.statusModalOpen.set(false);
+      this.appointmentService.bookingsVersion.update((v) => v + 1);
+    } catch (error) {
+      const err = error as Error;
+      this.statusError.set(err.message || 'Could not update status.');
+    } finally {
+      this.statusSaving.set(false);
+    }
   }
 
   closePaymentModal(): void {

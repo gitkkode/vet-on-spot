@@ -35,10 +35,10 @@ export interface DoctorForm {
   location: string;
   mobile: string;
   email: string;
-  rating: number;
-  status: DoctorStatus;
+  rating: number | null;
+  status: DoctorStatus | '';
 }
 
 export function createEmptyDoctorForm(): DoctorForm {
-  return { name: '', specialty: '', location: '', mobile: '', email: '', rating: 4.5, status: 'available' };
+  return { name: '', specialty: '', location: '', mobile: '', email: '', rating: null, status: '' };
 }

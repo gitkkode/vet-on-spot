@@ -415,6 +415,12 @@
     }
   }
 
+  &__modal-hint {
+    margin: 0;
+    font-size: 13px;
+    color: $text-secondary;
+  }
+
   &__modal-actions {
     display: flex;
     justify-content: flex-end;
